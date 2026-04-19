@@ -1,0 +1,66 @@
+{
+  "users": [
+    {
+      "usuario": "admin",
+      "senha": "1234",
+      "id": "szv0An2kPXE",
+      "cards": [],
+      "collections": [
+        {
+          "id": "collection-1776636448125",
+          "nome": "Teste",
+          "cardIds": [],
+          "createdAt": "2026-04-19T22:07:28.125Z"
+        }
+      ],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": [
+            {
+              "id": "photo-1776635377457",
+              "titulo": "Binder novo",
+              "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/43cddb81-71e4-4c48-8d4e-a18cae1d1232.jpeg"
+            }
+          ]
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ]
+    },
+    {
+      "usuario": "grazi",
+      "senha": "12345",
+      "id": "4r9dOSKBbps",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ]
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
