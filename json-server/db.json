@@ -11,18 +11,7 @@
       "senha": "12345"
     }
   ],
-  "cards": [
-    {
-      "id": "_8x-Mgz6PoI",
-      "nome": "Mismagius",
-      "numero": "212/193",
-      "set": "Paldea Evolved",
-      "raridade": "Ultra Rara",
-      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/53a993ad-a888-4c40-a500-b836d93a01f7.jpeg",
-      "capturadaEm": "2026-04-19T15:00:00.000Z",
-      "userId": "u1"
-    }
-  ],
+  "cards": [],
   "collections": [
     {
       "id": "collection-1776640520870",

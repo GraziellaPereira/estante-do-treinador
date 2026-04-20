@@ -403,8 +403,8 @@ export default function HomeScreen() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        "Permissao necessaria",
-        "Permita acesso a galeria para selecionar uma imagem.",
+        "Permissão necessária",
+        "Permita acesso à galeria para selecionar uma imagem.",
       );
       return null;
     }
@@ -426,8 +426,8 @@ export default function HomeScreen() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(
-        "Permissao necessaria",
-        "Permita acesso a camera para tirar uma foto.",
+        "Permissão necessária",
+        "Permita acesso à camera para tirar uma foto.",
       );
       return null;
     }
@@ -1221,9 +1221,9 @@ export default function HomeScreen() {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>Ola, {userName}!</Text>
+            <Text style={styles.greeting}>Olá, {userName}!</Text>
             <Text style={styles.subGreeting}>
-              Sua estante esta pronta para explorar.
+              Sua estante está pronta para ser explorada.
             </Text>
           </View>
           <View style={styles.headerActions}>
@@ -1400,18 +1400,13 @@ export default function HomeScreen() {
                   onPress={() => setSelectedCard(card)}
                 />
               ))}
-              {cardsRecentes.length === 0 && (
-                <Text style={styles.emptyText}>
-                   Nenhuma carta ainda. Use o botao + para adicionar.
-                </Text>
-              )}
             </ScrollView>
 
             {filteredCollections.length === 0 && (
               <Text style={styles.emptyText}>
                 {collectionSearch.trim()
-                  ? "Nenhuma colecao encontrada para essa busca."
-                  : "Toque no + para criar sua primeira colecao."}
+                  ? "Nenhuma coleção encontrada para essa busca."
+                  : "Toque no + para criar sua primeira coleção."}
               </Text>
             )}
             <View style={styles.collectionSearchRow}>
@@ -1419,7 +1414,7 @@ export default function HomeScreen() {
     <TextInput
       value={collectionSearch}
       onChangeText={setCollectionSearch}
-      placeholder="Pesquisar colecao existente"
+      placeholder="Pesquisar coleção existente"
       placeholderTextColor="#9A8E80"
       style={styles.collectionSearchInput}
     />
@@ -1434,7 +1429,7 @@ export default function HomeScreen() {
                 activeOpacity={0.9}
               >
                 <Text style={styles.addCollectionPlus}>+</Text>
-                <Text style={styles.addCollectionLabel}>Nova colecao</Text>
+                <Text style={styles.addCollectionLabel}>Nova coleção</Text>
               </TouchableOpacity>
               {filteredCollections.map((collection) => {
                 const thumbs = getCollectionThumbs(collection);
@@ -1499,7 +1494,7 @@ export default function HomeScreen() {
               })}
               {collections.length === 0 && (
                 <Text style={styles.emptyText}>
-                  Crie sua primeira colecao acima.
+                  Crie sua primeira coleção acima.
                 </Text>
               )}
             </View>
@@ -2362,20 +2357,21 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   avatarButton: {
-    width: 64,
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#846544",
-    backgroundColor: "rgba(232, 168, 95, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 56,
+  height: 56,
+  borderRadius: 28,
+  borderWidth: 1,
+  borderColor: "#846544",
+  backgroundColor: "rgba(232, 168, 95, 0.15)",
+  justifyContent: "center",
+  alignItems: "center",
   },
   avatarIcon: {
-    color: "#E8C38B",
-    fontSize: 11,
-    fontWeight: "900",
-  },
+  color: "#E8C38B",
+  fontSize: 9,
+  fontWeight: "900",
+  textAlign: "center",
+},
   searchBox: {
     borderWidth: 1,
     borderColor: "#745437",
