@@ -221,9 +221,9 @@ export default function LoginScreen() {
                 <Image source={require('../../assets/logoestante.png')} style={styles.logoimagem} />
               </View>
               <View style={styles.heroTexto}>
-                <Text style={styles.titulo}>Treinador, sua colecao te aguarda!</Text>
+                <Text style={styles.titulo}>Treinador, sua coleção te aguarda!</Text>
                 <Text style={styles.subtitulo}>
-                  {mode === 'login' ? 'Faca login para continuar' : 'Crie sua conta para comecar'}
+                  {mode === 'login' ? 'Faca login para continuar' : 'Crie sua conta para começar'}
                 </Text>
               </View>
               <View style={styles.ilustracao} pointerEvents="none">
@@ -232,10 +232,10 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Text style={styles.label}>Usuario</Text>
+              <Text style={styles.label}>Usuário</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Digite seu usuario"
+                placeholder="Digite seu usuário"
                 placeholderTextColor="#aaa"
                 value={usuario}
                 onChangeText={setUsuario}
