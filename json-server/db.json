@@ -1,65 +1,81 @@
 {
   "users": [
     {
+      "id": "u1",
       "usuario": "admin",
-      "senha": "1234",
-      "id": "szv0An2kPXE",
-      "cards": [],
-      "collections": [
-        {
-          "id": "collection-1776636448125",
-          "nome": "Teste",
-          "cardIds": [],
-          "createdAt": "2026-04-19T22:07:28.125Z"
-        }
-      ],
-      "photoFolders": [
-        {
-          "id": "favoritas",
-          "nome": "Cartas favoritas",
-          "fotos": []
-        },
-        {
-          "id": "binder",
-          "nome": "Binder",
-          "fotos": [
-            {
-              "id": "photo-1776635377457",
-              "titulo": "Binder novo",
-              "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/43cddb81-71e4-4c48-8d4e-a18cae1d1232.jpeg"
-            }
-          ]
-        },
-        {
-          "id": "outras",
-          "nome": "Outras",
-          "fotos": []
-        }
-      ]
+      "senha": "1234"
     },
     {
+      "id": "u2",
       "usuario": "grazi",
-      "senha": "12345",
-      "id": "4r9dOSKBbps",
-      "cards": [],
-      "collections": [],
-      "photoFolders": [
-        {
-          "id": "favoritas",
-          "nome": "Cartas favoritas",
-          "fotos": []
-        },
-        {
-          "id": "binder",
-          "nome": "Binder",
-          "fotos": []
-        },
-        {
-          "id": "outras",
-          "nome": "Outras",
-          "fotos": []
-        }
-      ]
+      "senha": "12345"
+    }
+  ],
+  "cards": [
+    {
+      "id": "_8x-Mgz6PoI",
+      "nome": "Mismagius",
+      "numero": "212/193",
+      "set": "Paldea Evolved",
+      "raridade": "Ultra Rara",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/53a993ad-a888-4c40-a500-b836d93a01f7.jpeg",
+      "capturadaEm": "2026-04-19T15:00:00.000Z",
+      "userId": "u1"
+    }
+  ],
+  "collections": [
+    {
+      "id": "collection-1776640520870",
+      "userId": "u1",
+      "nome": "Colecao teste",
+      "createdAt": "2026-04-19T23:15:20.870Z"
+    }
+  ],
+  "collectionCards": [],
+  "folders": [
+    {
+      "id": "u1-favoritas",
+      "userId": "u1",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "u1-binder",
+      "userId": "u1",
+      "nome": "Binder"
+    },
+    {
+      "id": "u1-outras",
+      "userId": "u1",
+      "nome": "Outras"
+    },
+    {
+      "id": "u1-folder-1776639971938",
+      "userId": "u1",
+      "nome": "Teste"
+    },
+    {
+      "id": "u2-favoritas",
+      "userId": "u2",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "u2-binder",
+      "userId": "u2",
+      "nome": "Binder"
+    },
+    {
+      "id": "u2-outras",
+      "userId": "u2",
+      "nome": "Outras"
+    }
+  ],
+  "photos": [
+    {
+      "id": "BspjIdLDDMQ",
+      "userId": "u1",
+      "folderId": "u1-binder",
+      "titulo": "Binder novo",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/0b19be27-1d64-4bfa-ab38-337770a46183.jpeg"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

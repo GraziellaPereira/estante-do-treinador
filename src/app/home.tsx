@@ -55,6 +55,7 @@ type NewCardDraft = {
   numero: string;
   raridade: Rarity;
   set: string;
+  capturadaEm: string;
   imageUrl: string;
 };
 
@@ -64,9 +65,34 @@ type ApiUser = {
   id?: string | number;
   usuario: string;
   senha: string;
-  cards?: CardItem[];
-  collections?: UserCollection[];
-  photoFolders?: PhotoFolder[];
+};
+
+type ApiCollection = {
+  id: string;
+  userId: string;
+  nome: string;
+  createdAt: string;
+  coverImageUrl?: string;
+};
+
+type CollectionLink = {
+  id: string;
+  collectionId: string;
+  cardId: string;
+};
+
+type ApiFolder = {
+  id: string;
+  userId: string;
+  nome: string;
+};
+
+type ApiPhoto = {
+  id: string;
+  userId: string;
+  folderId: string;
+  titulo: string;
+  imageUrl: string;
 };
 
 const DEFAULT_PHOTO_FOLDERS: PhotoFolder[] = [
@@ -95,6 +121,7 @@ const emptyDraft: NewCardDraft = {
   numero: "",
   raridade: "Comum",
   set: "",
+  capturadaEm: new Date().toISOString().slice(0, 10),
   imageUrl: "",
 };
 
@@ -211,24 +238,63 @@ export default function HomeScreen() {
           return;
         }
 
-        const parsedCards = Array.isArray(usuario.cards) ? usuario.cards : [];
-        const parsedCollections = Array.isArray(usuario.collections)
-          ? usuario.collections
-          : [];
-        const parsedFolders = Array.isArray(usuario.photoFolders)
-          ? usuario.photoFolders
-          : [];
+        const userId = String(usuario.id);
+        setAuthUserId(userId);
 
-        const defaults = new Map(DEFAULT_PHOTO_FOLDERS.map((f) => [f.id, f]));
-        const existing = new Set(parsedFolders.map((f) => f.id));
-        const missing = Array.from(defaults.values()).filter(
-          (f) => !existing.has(f.id),
+        const [cardsRes, collectionsRes, linksRes, foldersRes, photosRes] =
+          await Promise.all([
+            fetch(`${BASE_URL}/cards?userId=${encodeURIComponent(userId)}`),
+            fetch(
+              `${BASE_URL}/collections?userId=${encodeURIComponent(userId)}`,
+            ),
+            fetch(`${BASE_URL}/collectionCards`),
+            fetch(`${BASE_URL}/folders?userId=${encodeURIComponent(userId)}`),
+            fetch(`${BASE_URL}/photos?userId=${encodeURIComponent(userId)}`),
+          ]);
+
+        if (
+          !cardsRes.ok ||
+          !collectionsRes.ok ||
+          !linksRes.ok ||
+          !foldersRes.ok ||
+          !photosRes.ok
+        ) {
+          throw new Error("Falha ao carregar recursos do usuario");
+        }
+
+        const parsedCards = (await cardsRes.json()) as CardItem[];
+        const apiCollections = (await collectionsRes.json()) as ApiCollection[];
+        const collectionLinks = (await linksRes.json()) as CollectionLink[];
+        const apiFolders = (await foldersRes.json()) as ApiFolder[];
+        const apiPhotos = (await photosRes.json()) as ApiPhoto[];
+
+        const parsedCollections: UserCollection[] = apiCollections.map(
+          (collection) => ({
+            id: collection.id,
+            nome: collection.nome,
+            createdAt: collection.createdAt,
+            coverImageUrl: collection.coverImageUrl,
+            cardIds: collectionLinks
+              .filter((link) => link.collectionId === collection.id)
+              .map((link) => link.cardId),
+          }),
         );
 
-        setAuthUserId(String(usuario.id));
+        const parsedFolders: PhotoFolder[] = apiFolders.map((folder) => ({
+          id: folder.id,
+          nome: folder.nome,
+          fotos: apiPhotos
+            .filter((photo) => photo.folderId === folder.id)
+            .map((photo) => ({
+              id: photo.id,
+              titulo: photo.titulo,
+              imageUrl: photo.imageUrl,
+            })),
+        }));
+
         setCards(parsedCards);
         setCollections(parsedCollections);
-        setPhotoFolders([...parsedFolders, ...missing]);
+        setPhotoFolders(parsedFolders);
       } catch {
         Alert.alert(
           "Erro",
@@ -241,39 +307,6 @@ export default function HomeScreen() {
 
     loadUserState();
   }, [authUserName, router]);
-
-  useEffect(() => {
-    const saveUserState = async () => {
-      if (!authUserId || !remoteLoaded) {
-        return;
-      }
-
-      try {
-        const resposta = await fetch(
-          `${BASE_URL}/users/${encodeURIComponent(authUserId)}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              cards,
-              collections,
-              photoFolders,
-            }),
-          },
-        );
-
-        if (!resposta.ok) {
-          throw new Error("Falha ao salvar dados do usuario");
-        }
-      } catch {
-        // Evita spam de alertas durante edicoes frequentes e deixa o fluxo da tela continuar.
-      }
-    };
-
-    saveUserState();
-  }, [authUserId, cards, collections, photoFolders, remoteLoaded]);
 
   const uniqueSets = useMemo(() => {
     return [
@@ -438,16 +471,29 @@ export default function HomeScreen() {
     );
   };
 
-  const handleSaveCard = () => {
+  const handleSaveCard = async () => {
     const nomeCard = newCardDraft.nome.trim();
     const codigoCard = newCardDraft.numero.trim();
     const setCard = newCardDraft.set.trim();
+    const capturadaEmDate = newCardDraft.capturadaEm.trim();
 
-    if (!newCardDraft.imageUrl || !nomeCard || !codigoCard || !setCard) {
+    if (
+      !newCardDraft.imageUrl ||
+      !nomeCard ||
+      !codigoCard ||
+      !setCard ||
+      !capturadaEmDate
+    ) {
       Alert.alert(
         "Campos obrigatorios",
-        "Preencha imagem, nome, codigo e colecao da carta.",
+        "Preencha imagem, nome, codigo, colecao e capturada em.",
       );
+      return;
+    }
+
+    const parsedDate = new Date(`${capturadaEmDate}T12:00:00`);
+    if (Number.isNaN(parsedDate.getTime())) {
+      Alert.alert("Data invalida", "Use o formato AAAA-MM-DD.");
       return;
     }
 
@@ -466,33 +512,107 @@ export default function HomeScreen() {
       set: setCard,
       raridade: newCardDraft.raridade,
       imageUrl: newCardDraft.imageUrl,
-      capturadaEm: new Date().toISOString(),
+      capturadaEm: parsedDate.toISOString(),
     };
+
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para salvar carta.");
+      return;
+    }
+
+    try {
+      const resposta = await fetch(`${BASE_URL}/cards`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newCard,
+          userId: authUserId,
+        }),
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Falha ao salvar carta");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel salvar a carta.");
+      return;
+    }
 
     setCards((prev) => [newCard, ...prev]);
     setIsAddCardModalOpen(false);
     setNewCardDraft(emptyDraft);
   };
 
-  const handleCreateCollection = () => {
+  const handleDeleteCollection = async (collectionId: string) => {
+    try {
+      const linksRes = await fetch(
+        `${BASE_URL}/collectionCards?collectionId=${encodeURIComponent(collectionId)}`,
+      );
+      if (linksRes.ok) {
+        const links = (await linksRes.json()) as CollectionLink[];
+        await Promise.all(
+          links.map((link) =>
+            fetch(`${BASE_URL}/collectionCards/${encodeURIComponent(link.id)}`, {
+              method: "DELETE",
+            }),
+          ),
+        );
+      }
+
+      const collectionRes = await fetch(
+        `${BASE_URL}/collections/${encodeURIComponent(collectionId)}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (!collectionRes.ok) {
+        throw new Error("Falha ao deletar colecao");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel excluir a colecao.");
+      return;
+    }
+
+    setCollections((prev) => prev.filter((c) => c.id !== collectionId));
+    setSelectedCollectionId((current) =>
+      current === collectionId ? null : current,
+    );
+  };
+
+  const handleConfirmDeleteCollection = (
+    collectionId: string,
+    collectionName: string,
+  ) => {
+    Alert.alert(
+      "Excluir colecao",
+      `Deseja excluir a colecao "${collectionName}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => {
+            void handleDeleteCollection(collectionId);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCreateCollection = async () => {
     const nomeColecao = newCollectionName.trim();
     if (!nomeColecao) {
       Alert.alert("Erro", "Digite um nome para a colecao.");
       return false;
     }
 
-  const handleDeleteCollection = (collectionId: string) => {
-    setCollections((prev) => prev.filter((c) => c.id !== collectionId));
-    setSelectedCollectionId((current) =>
-    current === collectionId ? null : current,
-);
-}; 
-  const handleConfirmDeleteCollection = (collectionId: string, collectionName: string) => {
-    Alert.alert('Excluir colecao', `Deseja excluir a colecao "${collectionName}"?`, [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => handleDeleteCollection(collectionId) },
-    ]);
-  };
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para criar colecao.");
+      return false;
+    }
 
     const collection: UserCollection = {
       id: "collection-" + Date.now(),
@@ -501,19 +621,85 @@ export default function HomeScreen() {
       createdAt: new Date().toISOString(),
     };
 
+    try {
+      const resposta = await fetch(`${BASE_URL}/collections`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: collection.id,
+          userId: authUserId,
+          nome: collection.nome,
+          createdAt: collection.createdAt,
+        }),
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Falha ao criar colecao");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel criar a colecao.");
+      return false;
+    }
+
     setCollections((prev) => [collection, ...prev]);
     setNewCollectionName("");
     return true;
   };
 
-  const toggleCardInCollection = (collectionId: string, cardId: string) => {
+  const toggleCardInCollection = async (collectionId: string, cardId: string) => {
+    const targetCollection = collections.find((c) => c.id === collectionId);
+    if (!targetCollection) {
+      return;
+    }
+
+    const exists = targetCollection.cardIds.includes(cardId);
+
+    try {
+      if (exists) {
+        const linksRes = await fetch(
+          `${BASE_URL}/collectionCards?collectionId=${encodeURIComponent(collectionId)}&cardId=${encodeURIComponent(cardId)}`,
+        );
+        if (!linksRes.ok) {
+          throw new Error("Falha ao carregar vinculos de colecao");
+        }
+        const links = (await linksRes.json()) as CollectionLink[];
+        await Promise.all(
+          links.map((link) =>
+            fetch(`${BASE_URL}/collectionCards/${encodeURIComponent(link.id)}`, {
+              method: "DELETE",
+            }),
+          ),
+        );
+      } else {
+        const linkId = `cc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const createRes = await fetch(`${BASE_URL}/collectionCards`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: linkId,
+            collectionId,
+            cardId,
+          }),
+        });
+        if (!createRes.ok) {
+          throw new Error("Falha ao vincular carta na colecao");
+        }
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel atualizar a colecao.");
+      return;
+    }
+
     setCollections((prev) =>
       prev.map((collection) => {
         if (collection.id !== collectionId) {
           return collection;
         }
 
-        const exists = collection.cardIds.includes(cardId);
         return {
           ...collection,
           cardIds: exists
@@ -533,6 +719,19 @@ export default function HomeScreen() {
           if (!uri) {
             return;
           }
+          try {
+            await fetch(`${BASE_URL}/collections/${encodeURIComponent(collectionId)}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                coverImageUrl: uri,
+              }),
+            });
+          } catch {
+            Alert.alert("Erro", "Nao foi possivel atualizar a capa.");
+          }
           setCollections((prev) =>
             prev.map((collection) =>
               collection.id === collectionId
@@ -548,6 +747,19 @@ export default function HomeScreen() {
           const uri = await pickImageFromCamera();
           if (!uri) {
             return;
+          }
+          try {
+            await fetch(`${BASE_URL}/collections/${encodeURIComponent(collectionId)}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                coverImageUrl: uri,
+              }),
+            });
+          } catch {
+            Alert.alert("Erro", "Nao foi possivel atualizar a capa.");
           }
           setCollections((prev) =>
             prev.map((collection) =>
@@ -569,14 +781,36 @@ export default function HomeScreen() {
     return images.slice(0, 3);
   };
 
-  const handleCreateFolder = () => {
-    const trimmedName = newFolderName.trim();
-    if (!trimmedName) {
-      Alert.alert("Erro", "Digite um nome para a pasta.");
+  const handleDeletePhotoFolder = async (folderId: string) => {
+    try {
+      const photosRes = await fetch(
+        `${BASE_URL}/photos?folderId=${encodeURIComponent(folderId)}`,
+      );
+      if (photosRes.ok) {
+        const photos = (await photosRes.json()) as ApiPhoto[];
+        await Promise.all(
+          photos.map((photo) =>
+            fetch(`${BASE_URL}/photos/${encodeURIComponent(photo.id)}`, {
+              method: "DELETE",
+            }),
+          ),
+        );
+      }
+
+      const folderRes = await fetch(
+        `${BASE_URL}/folders/${encodeURIComponent(folderId)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (!folderRes.ok) {
+        throw new Error("Falha ao excluir pasta");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel excluir a pasta.");
       return;
     }
-    
-  const handleDeleteFolder = (folderId: string) => {
+
     setPhotoFolders((prev) => prev.filter((f) => f.id !== folderId));
     setPhotoPreview((current) => {
       if (!current) {
@@ -592,42 +826,115 @@ export default function HomeScreen() {
     });
   };
 
-    const confirmDeleteFolder = (folderId: string, folderName: string) => { 
-      Alert.alert('Excluir pasta', `Deseja excluir a pasta "${folderName}" e todas as fotos dentro dela?`, [
+  const handleConfirmDeletePhotoFolder = (
+    folderId: string,
+    folderName: string,
+  ) => {
+    Alert.alert(
+      "Excluir pasta",
+      `Deseja excluir a pasta "${folderName}" e todas as fotos dentro dela?`,
+      [
         { text: "Cancelar", style: "cancel" },
         {
           text: "Excluir",
           style: "destructive",
-          onPress: () => handleDeleteFolder(folderId),
+          onPress: () => {
+            void handleDeletePhotoFolder(folderId);
+          },
         },
-      ]);
-    };
+      ],
+    );
+  };
+
+  const handleCreateFolder = async () => {
+    const trimmedName = newFolderName.trim();
+    if (!trimmedName) {
+      Alert.alert("Erro", "Digite um nome para a pasta.");
+      return false;
+    }
 
     const exists = photoFolders.some(
       (folder) => folder.nome.toLowerCase() === trimmedName.toLowerCase(),
     );
     if (exists) {
       Alert.alert("Erro", "Ja existe uma pasta com esse nome.");
-      return;
+      return false;
+    }
+
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para criar pasta.");
+      return false;
+    }
+
+    const folderId = "folder-" + Date.now();
+
+    try {
+      const resposta = await fetch(`${BASE_URL}/folders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: folderId,
+          userId: authUserId,
+          nome: trimmedName,
+        }),
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Falha ao criar pasta");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel criar a pasta.");
+      return false;
     }
 
     setPhotoFolders((prev) => [
       ...prev,
-      { id: "folder-" + Date.now(), nome: trimmedName, fotos: [] },
+      { id: folderId, nome: trimmedName, fotos: [] },
     ]);
     setNewFolderName("");
+    return true;
   };
 
-  const pushPhotoToFolder = (
+  const pushPhotoToFolder = async (
     folderId: string,
     imageUrl: string,
     title: string,
   ) => {
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para salvar foto.");
+      return false;
+    }
+
     const newPhoto: PhotoItem = {
       id: "photo-" + Date.now(),
       titulo: title,
       imageUrl,
     };
+
+    try {
+      const resposta = await fetch(`${BASE_URL}/photos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: newPhoto.id,
+          userId: authUserId,
+          folderId,
+          titulo: title,
+          imageUrl,
+        }),
+      });
+      if (!resposta.ok) {
+        throw new Error("Falha ao salvar foto");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel salvar a foto.");
+      return false;
+    }
+
     setPhotoFolders((prev) =>
       prev.map((folder) =>
         folder.id === folderId
@@ -635,6 +942,7 @@ export default function HomeScreen() {
           : folder,
       ),
     );
+    return true;
   };
 
   const handleAddPhotoFromGallery = async (folderId: string) => {
@@ -657,7 +965,7 @@ export default function HomeScreen() {
     setPendingPhotoTitle("");
   };
 
-  const handleSavePendingPhoto = () => {
+  const handleSavePendingPhoto = async () => {
     if (!pendingPhotoToName) {
       return;
     }
@@ -668,11 +976,14 @@ export default function HomeScreen() {
       return;
     }
 
-    pushPhotoToFolder(
+    const saved = await pushPhotoToFolder(
       pendingPhotoToName.folderId,
       pendingPhotoToName.imageUrl,
       title,
     );
+    if (!saved) {
+      return;
+    }
     setPendingPhotoToName(null);
     setPendingPhotoTitle("");
   };
@@ -685,7 +996,22 @@ export default function HomeScreen() {
     ]);
   };
 
-  const handleDeletePhoto = (folderId: string, photoId: string) => {
+  const handleDeletePhoto = async (folderId: string, photoId: string) => {
+    try {
+      const resposta = await fetch(
+        `${BASE_URL}/photos/${encodeURIComponent(photoId)}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (!resposta.ok) {
+        throw new Error("Falha ao excluir foto");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel excluir a foto.");
+      return;
+    }
+
     setPhotoFolders((prev) =>
       prev.map((folder) =>
         folder.id === folderId
@@ -718,12 +1044,40 @@ export default function HomeScreen() {
       {
         text: "Excluir",
         style: "destructive",
-        onPress: () => handleDeletePhoto(folderId, photoId),
+        onPress: () => {
+          void handleDeletePhoto(folderId, photoId);
+        },
       },
     ]);
   };
 
-  const handleDeleteCard = (cardId: string) => {
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      const linksRes = await fetch(
+        `${BASE_URL}/collectionCards?cardId=${encodeURIComponent(cardId)}`,
+      );
+      if (linksRes.ok) {
+        const links = (await linksRes.json()) as CollectionLink[];
+        await Promise.all(
+          links.map((link) =>
+            fetch(`${BASE_URL}/collectionCards/${encodeURIComponent(link.id)}`, {
+              method: "DELETE",
+            }),
+          ),
+        );
+      }
+
+      const cardRes = await fetch(`${BASE_URL}/cards/${encodeURIComponent(cardId)}`, {
+        method: "DELETE",
+      });
+      if (!cardRes.ok) {
+        throw new Error("Falha ao excluir carta");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel excluir a carta.");
+      return;
+    }
+
     setCards((prev) => prev.filter((card) => card.id !== cardId));
     setCollections((prev) =>
       prev.map((collection) => ({
@@ -740,7 +1094,9 @@ export default function HomeScreen() {
       {
         text: "Excluir",
         style: "destructive",
-        onPress: () => handleDeleteCard(card.id),
+        onPress: () => {
+          void handleDeleteCard(card.id);
+        },
       },
     ]);
   };
@@ -754,7 +1110,7 @@ export default function HomeScreen() {
     setPhotoRenameValue(currentTitle);
   };
 
-  const handleRenamePhoto = () => {
+  const handleRenamePhoto = async () => {
     const target = photoRenameTarget;
     if (!target) {
       return;
@@ -763,6 +1119,27 @@ export default function HomeScreen() {
     const trimmed = photoRenameValue.trim();
     if (!trimmed) {
       Alert.alert("Erro", "Digite um nome para a foto.");
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        `${BASE_URL}/photos/${encodeURIComponent(target.photoId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            titulo: trimmed,
+          }),
+        },
+      );
+      if (!resposta.ok) {
+        throw new Error("Falha ao renomear foto");
+      }
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel renomear a foto.");
       return;
     }
 
@@ -850,31 +1227,30 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Text style={styles.logoutButtonText}>Sair</Text>
-            </TouchableOpacity>
+            <TouchableOpacity onPress={handleLogout}>
+  <Text style={styles.logoutButtonText}>Sair</Text>
+</TouchableOpacity>
             <TouchableOpacity
               style={styles.avatarButton}
-              onPress={() => setIsAddCardModalOpen(true)}
+              onPress={() => Alert.alert('Em breve', 'Perfil sera implementado em breve.')}
             >
-              <Text style={styles.avatarIcon}>+CARD</Text>
+              <Text style={styles.avatarIcon}>PERFIL</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.searchBox}>
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Pesquisar carta por nome ou codigo"
-            placeholderTextColor="#9A8E80"
-            style={styles.searchInput}
-          />
-          <Text style={styles.searchIcon}>⌕</Text>
-        </View>
+        {mode !== "padrao" && (
+  <View style={styles.searchBox}>
+    <TextInput
+      value={query}
+      onChangeText={setQuery}
+      placeholder="Pesquisar carta por nome ou codigo"
+      placeholderTextColor="#9A8E80"
+      style={styles.searchInput}
+    />
+    <Text style={styles.searchIcon}>⌕</Text>
+  </View>
+)}
 
         <View style={styles.modeRow}>
           <ModeChip
@@ -1006,6 +1382,16 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalList}
             >
+              <TouchableOpacity
+                style={[styles.cardTile, styles.cardTileCompact, styles.addRecentCardTile]}
+                onPress={() => setIsAddCardModalOpen(true)}
+                activeOpacity={0.9}
+              >
+                <View style={styles.addRecentCardInner}>
+                  <Text style={styles.addRecentCardPlus}>+</Text>
+                  <Text style={styles.addRecentCardLabel}>Adicionar carta</Text>
+                </View>
+              </TouchableOpacity>
               {cardsRecentes.map((card) => (
                 <CardTile
                   key={card.id}
@@ -1016,7 +1402,7 @@ export default function HomeScreen() {
               ))}
               {cardsRecentes.length === 0 && (
                 <Text style={styles.emptyText}>
-                  Nenhuma carta ainda. Use +CARD para adicionar.
+                   Nenhuma carta ainda. Use o botao + para adicionar.
                 </Text>
               )}
             </ScrollView>
@@ -1029,14 +1415,17 @@ export default function HomeScreen() {
               </Text>
             )}
             <View style={styles.collectionSearchRow}>
-              <TextInput
-                value={collectionSearch}
-                onChangeText={setCollectionSearch}
-                placeholder="Pesquisar colecao existente"
-                placeholderTextColor="#9A8E80"
-                style={styles.collectionSearchInput}
-              />
-            </View>
+  <View style={styles.collectionSearchBox}>
+    <TextInput
+      value={collectionSearch}
+      onChangeText={setCollectionSearch}
+      placeholder="Pesquisar colecao existente"
+      placeholderTextColor="#9A8E80"
+      style={styles.collectionSearchInput}
+    />
+    <Text style={styles.collectionSearchIcon}>⌕</Text>
+  </View>
+</View>
 
             <View style={styles.collectionsGrid}>
               <TouchableOpacity
@@ -1056,6 +1445,12 @@ export default function HomeScreen() {
                     style={styles.collectionCard}
                     onPress={() => setSelectedCollectionId(collection.id)}
                   >
+                    <TouchableOpacity
+                      style={styles.collectionDeleteButton}
+                      onPress={() => handleConfirmDeleteCollection(collection.id, collection.nome)}
+                    >
+                      <Text style={styles.collectionDeleteButtonText}>X</Text>
+                    </TouchableOpacity>
                     <View style={styles.collectionThumbWrap}>
                       {hasCustomCover ? (
                         <Image
@@ -1113,25 +1508,35 @@ export default function HomeScreen() {
               title="Minhas fotos"
               subtitle={`${photoFolders.length} pastas de fotos`}
             />
-            <View style={styles.newFolderRow}>
-              <TextInput
-                value={newFolderName}
-                onChangeText={setNewFolderName}
-                placeholder="Nome da nova pasta"
-                placeholderTextColor="#9A8E80"
-                style={styles.newFolderInput}
-              />
-              <TouchableOpacity
-                style={styles.newFolderButton}
-                onPress={handleCreateFolder}
-              >
-                <Text style={styles.newFolderButtonText}>Criar pasta</Text>
-              </TouchableOpacity>
-            </View>
+            <View style={styles.folderSearchRow}>
+  <View style={styles.folderSearchBox}>
+    <TextInput
+      value={folderSearch}
+      onChangeText={setFolderSearch}
+      placeholder="Pesquisar pasta existente"
+      placeholderTextColor="#9A8E80"
+      style={styles.folderSearchInput}
+    />
+    <Text style={styles.searchIcon}>⌕</Text>
+  </View>
+
+  <TouchableOpacity
+    style={styles.folderAddButton}
+    onPress={() => setIsCreateFolderModalOpen(true)}
+  >
+    <Text style={styles.folderAddButtonText}>+</Text>
+  </TouchableOpacity>
+</View>
 
             <View style={styles.photoFolderList}>
-              {photoFolders.map((folder) => (
+              {filteredPhotoFolders.map((folder) => (
                 <View key={folder.id} style={styles.photoFolderCard}>
+                  <TouchableOpacity
+                    style={styles.folderDeleteButton}
+                    onPress={() => handleConfirmDeletePhotoFolder(folder.id, folder.nome)}
+                  >
+                    <Text style={styles.folderDeleteButtonText}>Excluir pasta</Text>
+                  </TouchableOpacity>
                   <View style={styles.photoFolderHeader}>
                     <View>
                       <Text style={styles.photoFolderName}>{folder.nome}</Text>
@@ -1337,6 +1742,15 @@ export default function HomeScreen() {
               placeholderTextColor="#9A8E80"
               style={styles.photoRenameInput}
             />
+            <TextInput
+              value={newCardDraft.capturadaEm}
+              onChangeText={(value) => 
+                setNewCardDraft((prev) => ({ ...prev, capturadaEm: value }))
+              }
+              placeholder="Data de captura (AAAA-MM-DD)"
+              placeholderTextColor="#9A8E80"
+              style={styles.photoRenameInput}
+            />
 
             <View style={styles.raritySelector}>
               {(["Comum", "Incomum", "Rara", "Ultra Rara"] as Rarity[]).map(
@@ -1418,8 +1832,8 @@ export default function HomeScreen() {
 
               <TouchableOpacity
                 style={styles.photoModalRenameButton}
-                onPress={() => {
-                  const created = handleCreateCollection();
+                onPress={async () => {
+                  const created = await handleCreateCollection();
                   if (created) {
                     setIsCreateCollectionModalOpen(false);
                   }
@@ -1708,6 +2122,55 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isCreateFolderModalOpen}
+        onRequestClose={() => {
+          setIsCreateFolderModalOpen(false);
+          setNewFolderName("");
+        }}
+      >
+        <View style={styles.photoModalOverlay}>
+          <View style={styles.photoRenameCard}>
+            <Text style={styles.photoRenameTitle}>Criar nova pasta</Text>
+
+            <TextInput
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+              placeholder="Digite o nome da pasta"
+              placeholderTextColor="#9A8E80"
+              style={styles.photoRenameInput}
+            />
+
+            <View style={styles.photoModalActions}>
+              <TouchableOpacity
+                style={styles.photoModalCloseButton}
+                onPress={() => {
+                  setIsCreateFolderModalOpen(false);
+                  setNewFolderName("");
+                }}
+              >
+                <Text style={styles.photoModalCloseText}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.photoModalRenameButton}
+                onPress={async () => {
+                  const created = await handleCreateFolder();
+                  if (created) {
+                    setIsCreateFolderModalOpen(false);
+                    setNewFolderName("");
+                  }
+                }}
+              >
+                <Text style={styles.photoModalRenameText}>Criar pasta</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.bottomNav}>
         {NAV_ITEMS.map((item) => {
           const active = item.key === "home";
@@ -1889,16 +2352,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#B8AFA4",
   },
-  logoutButton: {
-    minHeight: 38,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#A46359",
-    backgroundColor: "rgba(130, 48, 40, 0.22)",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 12,
-  },
+ logoutButton: {
+  paddingHorizontal: 0,
+  paddingVertical: 0,
+},
   logoutButtonText: {
     color: "#F8C2B9",
     fontSize: 12,
@@ -2121,18 +2578,28 @@ const styles = StyleSheet.create({
     borderColor: "rgba(214, 164, 90, 0.22)",
     backgroundColor: "rgba(18, 13, 9, 0.92)",
   },
+  collectionSearchBox: {
+  borderWidth: 1,
+  borderColor: "#745437",
+  backgroundColor: "rgba(20, 14, 9, 0.85)",
+  borderRadius: 12,
+  minHeight: 42,
+  paddingHorizontal: 12,
+  flexDirection: "row",
+  alignItems: "center",
+},
+collectionSearchInput: {
+  flex: 1,
+  color: "#EFE7DB",
+  fontSize: 14,
+},
+collectionSearchIcon: {
+  color: "#B79762",
+  fontSize: 17,
+  marginLeft: 10,
+},
   collectionSearchRow: {
     marginBottom: 12,
-  },
-  collectionSearchInput: {
-    borderWidth: 1,
-    borderColor: "#745437",
-    backgroundColor: "rgba(20, 14, 9, 0.85)",
-    borderRadius: 12,
-    minHeight: 42,
-    paddingHorizontal: 12,
-    color: "#EFE7DB",
-    fontSize: 14,
   },
   addCollectionCard: {
     width: "48.5%",
@@ -2238,15 +2705,115 @@ const styles = StyleSheet.create({
     color: "#EFE7DB",
     fontSize: 14,
   },
-  newFolderButton: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+  addRecentCardTile: {
     borderWidth: 1,
-    borderColor: "#D6A45A",
-    backgroundColor: "rgba(214, 164, 90, 0.18)",
+    borderColor: "rgba(214, 164, 90, 0.35)",
+    backgroundColor: "rgba(22, 16, 11, 0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 120,
   },
-  newFolderButtonText: { color: "#F3DFC2", fontWeight: "700", fontSize: 12 },
+  addRecentCardInner: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addRecentCardPlus: {
+    color: "#E4B56D",
+    fontSize: 32,
+    fontWeight: "800",
+  },
+  addRecentCardLabel: {
+    color: "#F3DFC2",
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  collectionDeleteButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    backgroundColor: "rgba(166, 58, 45, 0.3)",
+    borderWidth: 1,
+    borderColor: "#A63A2D",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  collectionDeleteButtonText: {
+    color: "#F5B5AB",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  folderSearchRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 12,
+},
+folderSearchBox: {
+  flex: 1,
+  flexDirection: "row",
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: "#745437",
+  backgroundColor: "rgba(20, 14, 9, 0.85)",
+  borderRadius: 12,
+  minHeight: 42,
+  paddingHorizontal: 12,
+  marginBottom: 0,
+},
+folderAddButton: {
+  width: 36,
+  height: 36,
+  borderRadius: 8,
+  backgroundColor: "rgba(214, 164, 90, 0.25)",
+  borderWidth: 1,
+  borderColor: "#D6A45A",
+  alignItems: "center",
+  justifyContent: "center",
+  marginLeft: 8,
+},
+  folderAddButtonText: {
+    color: "#E4B56D",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  folderSearchInput: {
+    flex: 1,
+    color: "#EFE7DB",
+    fontSize: 14,
+  },
+  addPhotoFolderCard: {
+    width: "48.5%",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(214, 164, 90, 0.35)",
+    backgroundColor: "rgba(22, 16, 11, 0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 100,
+  },
+  folderDeleteButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#A63A2D",
+    backgroundColor: "rgba(166, 58, 45, 0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    zIndex: 10,
+  },
+  folderDeleteButtonText: {
+    color: "#F5B5AB",
+    fontSize: 11,
+    fontWeight: "700",
+  },
   photoFolderList: { marginBottom: 8 },
   photoFolderCard: {
     borderRadius: 14,
