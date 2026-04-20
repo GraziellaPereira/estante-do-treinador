@@ -1645,7 +1645,7 @@ export default function HomeScreen() {
               title={
                 selectedSet === "Todos" ? "Por set" : `Set: ${selectedSet}`
               }
-              subtitle={`${filteredCards.length} cartas visiveis`}
+              subtitle={`${filteredCards.length} cartas visíveis`}
             />
             {sectionsBySet.map((section) => (
               <View key={section.nome} style={styles.setSection}>

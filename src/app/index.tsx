@@ -480,12 +480,12 @@ const styles = StyleSheet.create({
   ilustracao: {
     width: '42%',
     alignItems: 'flex-end',
-    marginBottom: -30,
+    marginBottom: -50,
   },
   imagem: {
     marginRight: -14,
-    width: 290,
-    height: 260,
+    width: 300,
+    height: 265,
     resizeMode: 'contain',
     opacity: 0.6,
   },
