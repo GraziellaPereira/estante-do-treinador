@@ -9,9 +9,92 @@
       "id": "u2",
       "usuario": "grazi",
       "senha": "12345"
+    },
+    {
+      "usuario": "master",
+      "senha": "Master",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "O0P03ES0Anc"
+    },
+    {
+      "usuario": "graziella",
+      "senha": "12345",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "QO3KW9D_OkY"
+    },
+    {
+      "usuario": "master123",
+      "senha": "master123",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "EyFkxRYqBr8"
     }
   ],
-  "cards": [],
+  "cards": [
+    {
+      "id": "iwRU3RivlGo",
+      "nome": "Wattrel da Kissera",
+      "numero": "231/217",
+      "set": "Ascended Heroes",
+      "raridade": "Ultra Rara",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/40c19a6a-3d64-47d1-aa7b-d3b6fe1c4edf.jpeg",
+      "capturadaEm": "2026-04-20T15:00:00.000Z",
+      "userId": "EyFkxRYqBr8"
+    }
+  ],
   "collections": [
     {
       "id": "collection-1776640520870",
@@ -20,7 +103,13 @@
       "createdAt": "2026-04-19T23:15:20.870Z"
     }
   ],
-  "collectionCards": [],
+  "collectionCards": [
+    {
+      "id": "K6worMdcsSs",
+      "collectionId": "collection-1776656329185",
+      "cardId": "card-1776656308842"
+    }
+  ],
   "folders": [
     {
       "id": "u1-favoritas",
@@ -56,6 +145,56 @@
       "id": "u2-outras",
       "userId": "u2",
       "nome": "Outras"
+    },
+    {
+      "id": "3JZBILkYzac",
+      "userId": "O0P03ES0Anc",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "pk6bCJxte9c",
+      "userId": "O0P03ES0Anc",
+      "nome": "Binder"
+    },
+    {
+      "id": "cmH2aibc2Ac",
+      "userId": "O0P03ES0Anc",
+      "nome": "Outras"
+    },
+    {
+      "id": "RghLWtj7ITQ",
+      "userId": "QO3KW9D_OkY",
+      "nome": "Binder"
+    },
+    {
+      "id": "hYw5Foxi9PM",
+      "userId": "QO3KW9D_OkY",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "bLFHW2FDPRA",
+      "userId": "QO3KW9D_OkY",
+      "nome": "Outras"
+    },
+    {
+      "id": "zCW5utiIJVE",
+      "userId": "EyFkxRYqBr8",
+      "nome": "Outras"
+    },
+    {
+      "id": "A2eD-7_pS_g",
+      "userId": "EyFkxRYqBr8",
+      "nome": "Binder"
+    },
+    {
+      "id": "x8mg7BOh1_A",
+      "userId": "EyFkxRYqBr8",
+      "nome": "Teste"
+    },
+    {
+      "id": "ckRiEWyupYI",
+      "userId": "EyFkxRYqBr8",
+      "nome": "Cartas favoritas"
     }
   ],
   "photos": [
@@ -65,6 +204,13 @@
       "folderId": "u1-binder",
       "titulo": "Binder novo",
       "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/0b19be27-1d64-4bfa-ab38-337770a46183.jpeg"
+    },
+    {
+      "id": "hdaA-ap26gI",
+      "userId": "EyFkxRYqBr8",
+      "folderId": "zCW5utiIJVE",
+      "titulo": "Zekrom do N",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/a8f13e75-b0d9-449f-9191-83b11201c144.jpeg"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

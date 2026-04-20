@@ -18,7 +18,7 @@ import BASE_URL from "../../apiService/api";
 
 type ShelfMode = "padrao" | "todas" | "set";
 type SortMode = "recentes" | "nome" | "set";
-type Rarity = "Comum" | "Incomum" | "Rara" | "Ultra Rara";
+type Rarity = "Comum" | "Incomum" | "Rara" | "Ultra Rara" | "Promo";
 
 type CardItem = {
   id: string;
@@ -114,6 +114,7 @@ const rarityOrder: Record<Rarity, number> = {
   Incomum: 2,
   Rara: 3,
   "Ultra Rara": 4,
+  Promo: 5,
 };
 
 const emptyDraft: NewCardDraft = {
@@ -194,8 +195,8 @@ export default function HomeScreen() {
         }
 
         Alert.alert(
-          "Sessao expirada",
-          "Nenhum login salvo foi encontrado. Faca login novamente.",
+          "Sessão expirada",
+          "Nenhum login salvo foi encontrado. Faça login novamente.",
         );
         router.replace("/");
       } finally {
@@ -221,7 +222,7 @@ export default function HomeScreen() {
         );
 
         if (!resposta.ok) {
-          throw new Error("Falha ao carregar dados do usuario");
+          throw new Error("Falha ao carregar dados do usuário");
         }
 
         const usuarios = (await resposta.json()) as ApiUser[];
@@ -231,8 +232,8 @@ export default function HomeScreen() {
 
         if (!usuario || usuario.id === undefined || usuario.id === null) {
           Alert.alert(
-            "Sessao invalida",
-            "Usuario nao encontrado. Faca login novamente.",
+            "Sessão inválida",
+            "Usuário não encontrado. Faça login novamente.",
           );
           router.replace("/");
           return;
@@ -259,7 +260,7 @@ export default function HomeScreen() {
           !foldersRes.ok ||
           !photosRes.ok
         ) {
-          throw new Error("Falha ao carregar recursos do usuario");
+          throw new Error("Falha ao carregar recursos do usuário");
         }
 
         const parsedCards = (await cardsRes.json()) as CardItem[];
@@ -267,6 +268,43 @@ export default function HomeScreen() {
         const collectionLinks = (await linksRes.json()) as CollectionLink[];
         const apiFolders = (await foldersRes.json()) as ApiFolder[];
         const apiPhotos = (await photosRes.json()) as ApiPhoto[];
+
+        const missingDefaultFolders = DEFAULT_PHOTO_FOLDERS.filter(
+          (defaultFolder) =>
+            !apiFolders.some(
+              (folder) =>
+                folder.nome.trim().toLowerCase() ===
+                defaultFolder.nome.trim().toLowerCase(),
+            ),
+        );
+
+        const createdDefaultFolders: ApiFolder[] = [];
+        await Promise.all(
+          missingDefaultFolders.map(async (defaultFolder) => {
+            const defaultFolderId = `folder-${userId}-${defaultFolder.id}`;
+            const createFolderRes = await fetch(`${BASE_URL}/folders`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id: defaultFolderId,
+                userId,
+                nome: defaultFolder.nome,
+              }),
+            });
+
+            if (createFolderRes.ok) {
+              createdDefaultFolders.push({
+                id: defaultFolderId,
+                userId,
+                nome: defaultFolder.nome,
+              });
+            }
+          }),
+        );
+
+        const mergedApiFolders = [...apiFolders, ...createdDefaultFolders];
 
         const parsedCollections: UserCollection[] = apiCollections.map(
           (collection) => ({
@@ -280,17 +318,40 @@ export default function HomeScreen() {
           }),
         );
 
-        const parsedFolders: PhotoFolder[] = apiFolders.map((folder) => ({
-          id: folder.id,
-          nome: folder.nome,
-          fotos: apiPhotos
-            .filter((photo) => photo.folderId === folder.id)
-            .map((photo) => ({
-              id: photo.id,
-              titulo: photo.titulo,
-              imageUrl: photo.imageUrl,
-            })),
-        }));
+        const defaultFolderOrder = new Map(
+          DEFAULT_PHOTO_FOLDERS.map((folder, index) => [
+            folder.nome.toLowerCase(),
+            index,
+          ]),
+        );
+
+        const parsedFolders: PhotoFolder[] = mergedApiFolders
+          .map((folder) => ({
+            id: folder.id,
+            nome: folder.nome,
+            fotos: apiPhotos
+              .filter((photo) => photo.folderId === folder.id)
+              .map((photo) => ({
+                id: photo.id,
+                titulo: photo.titulo,
+                imageUrl: photo.imageUrl,
+              })),
+          }))
+          .sort((a, b) => {
+            const aOrder = defaultFolderOrder.get(a.nome.toLowerCase());
+            const bOrder = defaultFolderOrder.get(b.nome.toLowerCase());
+
+            if (aOrder !== undefined && bOrder !== undefined) {
+              return aOrder - bOrder;
+            }
+            if (aOrder !== undefined) {
+              return -1;
+            }
+            if (bOrder !== undefined) {
+              return 1;
+            }
+            return a.nome.localeCompare(b.nome);
+          });
 
         setCards(parsedCards);
         setCollections(parsedCollections);
@@ -298,7 +359,7 @@ export default function HomeScreen() {
       } catch {
         Alert.alert(
           "Erro",
-          "Nao foi possivel carregar os dados da sua estante.",
+          "Não foi possível carregar os dados da sua estante.",
         );
       } finally {
         setRemoteLoaded(true);
@@ -322,7 +383,8 @@ export default function HomeScreen() {
       const matchesQuery =
         !normalizedQuery ||
         card.nome.toLowerCase().includes(normalizedQuery) ||
-        card.numero.toLowerCase().includes(normalizedQuery);
+        card.numero.toLowerCase().includes(normalizedQuery) ||
+        card.raridade.toLowerCase().includes(normalizedQuery);
 
       const matchesSet = selectedSet === "Todos" || card.set === selectedSet;
       const matchesRarity =
@@ -493,7 +555,7 @@ export default function HomeScreen() {
 
     const parsedDate = new Date(`${capturadaEmDate}T12:00:00`);
     if (Number.isNaN(parsedDate.getTime())) {
-      Alert.alert("Data invalida", "Use o formato AAAA-MM-DD.");
+      Alert.alert("Data inválida", "Use o formato AAAA-MM-DD.");
       return;
     }
 
@@ -546,6 +608,11 @@ export default function HomeScreen() {
   };
 
   const handleDeleteCollection = async (collectionId: string) => {
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para excluir colecao.");
+      return;
+    }
+
     try {
       const linksRes = await fetch(
         `${BASE_URL}/collectionCards?collectionId=${encodeURIComponent(collectionId)}`,
@@ -553,23 +620,38 @@ export default function HomeScreen() {
       if (linksRes.ok) {
         const links = (await linksRes.json()) as CollectionLink[];
         await Promise.all(
-          links.map((link) =>
-            fetch(`${BASE_URL}/collectionCards/${encodeURIComponent(link.id)}`, {
-              method: "DELETE",
-            }),
-          ),
+          links.map(async (link) => {
+            const deleteLinkRes = await fetch(
+              `${BASE_URL}/collectionCards/${encodeURIComponent(link.id)}`,
+              {
+                method: "DELETE",
+              },
+            );
+            if (!deleteLinkRes.ok && deleteLinkRes.status !== 404) {
+              throw new Error("Falha ao deletar vinculo da colecao");
+            }
+          }),
         );
       }
 
-      const collectionRes = await fetch(
-        `${BASE_URL}/collections/${encodeURIComponent(collectionId)}`,
-        {
-          method: "DELETE",
-        },
+      const collectionLookupRes = await fetch(
+        `${BASE_URL}/collections?userId=${encodeURIComponent(authUserId)}&id=${encodeURIComponent(collectionId)}`,
       );
 
-      if (!collectionRes.ok) {
-        throw new Error("Falha ao deletar colecao");
+      if (collectionLookupRes.ok) {
+        const foundCollections = (await collectionLookupRes.json()) as ApiCollection[];
+        if (foundCollections.length > 0) {
+          const collectionRes = await fetch(
+            `${BASE_URL}/collections/${encodeURIComponent(foundCollections[0].id)}`,
+            {
+              method: "DELETE",
+            },
+          );
+
+          if (!collectionRes.ok && collectionRes.status !== 404) {
+            throw new Error("Falha ao deletar colecao");
+          }
+        }
       }
     } catch {
       Alert.alert("Erro", "Nao foi possivel excluir a colecao.");
@@ -610,7 +692,7 @@ export default function HomeScreen() {
     }
 
     if (!authUserId) {
-      Alert.alert("Erro", "Usuario nao identificado para criar colecao.");
+      Alert.alert("Erro", "Usuário não identificado para criar coleção.");
       return false;
     }
 
@@ -710,68 +792,33 @@ export default function HomeScreen() {
     );
   };
 
-  const handlePickCollectionCover = (collectionId: string) => {
-    Alert.alert("Capa da colecao", "Escolha a origem da capa.", [
-      {
-        text: "Galeria",
-        onPress: async () => {
-          const uri = await pickImageFromGallery();
-          if (!uri) {
-            return;
-          }
-          try {
-            await fetch(`${BASE_URL}/collections/${encodeURIComponent(collectionId)}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                coverImageUrl: uri,
-              }),
-            });
-          } catch {
-            Alert.alert("Erro", "Nao foi possivel atualizar a capa.");
-          }
-          setCollections((prev) =>
-            prev.map((collection) =>
-              collection.id === collectionId
-                ? { ...collection, coverImageUrl: uri }
-                : collection,
-            ),
-          );
+  const handlePickCollectionCover = async (collectionId: string) => {
+    const uri = await pickImageFromGallery();
+    if (!uri) {
+      return;
+    }
+
+    try {
+      await fetch(`${BASE_URL}/collections/${encodeURIComponent(collectionId)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
         },
-      },
-      {
-        text: "Camera",
-        onPress: async () => {
-          const uri = await pickImageFromCamera();
-          if (!uri) {
-            return;
-          }
-          try {
-            await fetch(`${BASE_URL}/collections/${encodeURIComponent(collectionId)}`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                coverImageUrl: uri,
-              }),
-            });
-          } catch {
-            Alert.alert("Erro", "Nao foi possivel atualizar a capa.");
-          }
-          setCollections((prev) =>
-            prev.map((collection) =>
-              collection.id === collectionId
-                ? { ...collection, coverImageUrl: uri }
-                : collection,
-            ),
-          );
-        },
-      },
-      { text: "Cancelar", style: "cancel" },
-    ]);
+        body: JSON.stringify({
+          coverImageUrl: uri,
+        }),
+      });
+    } catch {
+      Alert.alert("Erro", "Nao foi possivel atualizar a capa.");
+    }
+
+    setCollections((prev) =>
+      prev.map((collection) =>
+        collection.id === collectionId
+          ? { ...collection, coverImageUrl: uri }
+          : collection,
+      ),
+    );
   };
 
   const getCollectionThumbs = (collection: UserCollection) => {
@@ -782,29 +829,49 @@ export default function HomeScreen() {
   };
 
   const handleDeletePhotoFolder = async (folderId: string) => {
+    if (!authUserId) {
+      Alert.alert("Erro", "Usuario nao identificado para excluir pasta.");
+      return;
+    }
+
     try {
       const photosRes = await fetch(
-        `${BASE_URL}/photos?folderId=${encodeURIComponent(folderId)}`,
+        `${BASE_URL}/photos?userId=${encodeURIComponent(authUserId)}&folderId=${encodeURIComponent(folderId)}`,
       );
       if (photosRes.ok) {
         const photos = (await photosRes.json()) as ApiPhoto[];
         await Promise.all(
-          photos.map((photo) =>
-            fetch(`${BASE_URL}/photos/${encodeURIComponent(photo.id)}`, {
-              method: "DELETE",
-            }),
-          ),
+          photos.map(async (photo) => {
+            const deletePhotoRes = await fetch(
+              `${BASE_URL}/photos/${encodeURIComponent(photo.id)}`,
+              {
+                method: "DELETE",
+              },
+            );
+            if (!deletePhotoRes.ok && deletePhotoRes.status !== 404) {
+              throw new Error("Falha ao excluir foto da pasta");
+            }
+          }),
         );
       }
 
-      const folderRes = await fetch(
-        `${BASE_URL}/folders/${encodeURIComponent(folderId)}`,
-        {
-          method: "DELETE",
-        },
+      const folderLookupRes = await fetch(
+        `${BASE_URL}/folders?userId=${encodeURIComponent(authUserId)}&id=${encodeURIComponent(folderId)}`,
       );
-      if (!folderRes.ok) {
-        throw new Error("Falha ao excluir pasta");
+
+      if (folderLookupRes.ok) {
+        const foundFolders = (await folderLookupRes.json()) as ApiFolder[];
+        if (foundFolders.length > 0) {
+          const folderRes = await fetch(
+            `${BASE_URL}/folders/${encodeURIComponent(foundFolders[0].id)}`,
+            {
+              method: "DELETE",
+            },
+          );
+          if (!folderRes.ok && folderRes.status !== 404) {
+            throw new Error("Falha ao excluir pasta");
+          }
+        }
       }
     } catch {
       Alert.alert("Erro", "Nao foi possivel excluir a pasta.");
@@ -819,6 +886,12 @@ export default function HomeScreen() {
       return current.folderId === folderId ? null : current;
     });
     setPendingPhotoToName((current) => {
+      if (!current) {
+        return current;
+      }
+      return current.folderId === folderId ? null : current;
+    });
+    setPhotoRenameTarget((current) => {
       if (!current) {
         return current;
       }
@@ -1340,6 +1413,11 @@ export default function HomeScreen() {
               isActive={rarityFilter === "Ultra Rara"}
               onPress={() => setRarityFilter("Ultra Rara")}
             />
+            <RarityChip
+              label="Promo"
+              isActive={rarityFilter === "Promo"}
+              onPress={() => setRarityFilter("Promo")}
+            />
           </View>
         )}
 
@@ -1401,7 +1479,12 @@ export default function HomeScreen() {
                 />
               ))}
             </ScrollView>
-
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Minhas coleções</Text>
+              <Text style={styles.sectionSubtitle}>
+                {`${collections.length} coleções criadas`}
+              </Text>
+            </View>
             {filteredCollections.length === 0 && (
               <Text style={styles.emptyText}>
                 {collectionSearch.trim()
@@ -1748,7 +1831,7 @@ export default function HomeScreen() {
             />
 
             <View style={styles.raritySelector}>
-              {(["Comum", "Incomum", "Rara", "Ultra Rara"] as Rarity[]).map(
+              {(["Comum", "Incomum", "Rara", "Ultra Rara", "Promo"] as Rarity[]).map(
                 (rarity) => (
                   <TouchableOpacity
                     key={rarity}
@@ -2215,19 +2298,55 @@ function ModeChip({ label, isActive, onPress }: ChipProps) {
 }
 
 function RarityChip({ label, isActive, onPress }: ChipProps) {
+  const isPromo = label === "Promo";
+
   return (
     <TouchableOpacity
-      style={[styles.rarityChip, isActive && styles.rarityChipActive]}
+      style={[
+        styles.rarityChip,
+        isPromo && styles.rarityChipPromo,
+        isActive && styles.rarityChipActive,
+        isPromo && isActive && styles.rarityChipPromoActive,
+      ]}
       onPress={onPress}
     >
       <Text
-        style={[styles.rarityChipText, isActive && styles.rarityChipTextActive]}
+        style={[
+          styles.rarityChipText,
+          isPromo && styles.rarityChipTextPromo,
+          isActive && styles.rarityChipTextActive,
+          isPromo && isActive && styles.rarityChipTextPromoActive,
+        ]}
       >
         {label}
       </Text>
     </TouchableOpacity>
   );
 }
+
+const getRarityBadgeStyle = (rarity: Rarity) => {
+  if (rarity === "Promo") {
+    return {
+      backgroundColor: "#4E8FA5",
+      textColor: "#06151C",
+      borderColor: "#7EBACF",
+    };
+  }
+
+  if (rarity === "Ultra Rara") {
+    return {
+      backgroundColor: "#D48552",
+      textColor: "#221106",
+      borderColor: "#E4A06D",
+    };
+  }
+
+  return {
+    backgroundColor: "#D6A45A",
+    textColor: "#24190D",
+    borderColor: "#E6BF80",
+  };
+};
 
 function SectionTitle({
   title,
@@ -2256,6 +2375,7 @@ function CardTile({
   onPress?: () => void;
 }) {
   const Container = onPress ? TouchableOpacity : View;
+  const rarityBadge = getRarityBadgeStyle(card.raridade);
 
   return (
     <Container
@@ -2281,7 +2401,18 @@ function CardTile({
           {card.set}
         </Text>
         <Text style={styles.cardMeta}>{card.numero}</Text>
-        <Text style={styles.cardBadge}>{card.raridade}</Text>
+        <Text
+          style={[
+            styles.cardBadge,
+            {
+              backgroundColor: rarityBadge.backgroundColor,
+              color: rarityBadge.textColor,
+              borderColor: rarityBadge.borderColor,
+            },
+          ]}
+        >
+          {card.raridade}
+        </Text>
       </LinearGradient>
     </Container>
   );
@@ -2452,17 +2583,31 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 8,
   },
+  rarityChipPromo: {
+    borderColor: "rgba(126, 186, 207, 0.45)",
+    backgroundColor: "rgba(8, 27, 34, 0.9)",
+  },
   rarityChipActive: {
     borderColor: "#D6A45A",
     backgroundColor: "rgba(214, 164, 90, 0.16)",
+  },
+  rarityChipPromoActive: {
+    borderColor: "#7EBACF",
+    backgroundColor: "rgba(78, 143, 165, 0.22)",
   },
   rarityChipText: {
     color: "#C2AE94",
     fontSize: 12,
     fontWeight: "600",
   },
+  rarityChipTextPromo: {
+    color: "#A7CBD8",
+  },
   rarityChipTextActive: {
     color: "#F0D9B7",
+  },
+  rarityChipTextPromoActive: {
+    color: "#D5EDF6",
   },
   setRow: {
     marginBottom: 8,
@@ -2551,11 +2696,10 @@ const styles = StyleSheet.create({
   cardBadge: {
     marginTop: 10,
     alignSelf: "flex-start",
-    color: "#24190D",
     fontWeight: "700",
     fontSize: 10,
-    backgroundColor: "#D6A45A",
     borderRadius: 999,
+    borderWidth: 1,
     overflow: "hidden",
     paddingHorizontal: 8,
     paddingVertical: 3,
