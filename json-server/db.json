@@ -81,6 +81,30 @@
         }
       ],
       "id": "EyFkxRYqBr8"
+    },
+    {
+      "usuario": "master1322",
+      "senha": "1234",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "eukm5VB8a1U"
     }
   ],
   "cards": [
@@ -93,14 +117,24 @@
       "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/40c19a6a-3d64-47d1-aa7b-d3b6fe1c4edf.jpeg",
       "capturadaEm": "2026-04-20T15:00:00.000Z",
       "userId": "EyFkxRYqBr8"
+    },
+    {
+      "id": "ESd7LUydbs4",
+      "nome": "Sylveon",
+      "numero": "200/100",
+      "set": "Prismatic evolutions",
+      "raridade": "Ultra Rara",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/609f091d-73dd-4dde-9ee9-d082d06d3438.jpeg",
+      "capturadaEm": "2026-04-22T15:00:00.000Z",
+      "userId": "eukm5VB8a1U"
     }
   ],
   "collections": [
     {
-      "id": "collection-1776640520870",
-      "userId": "u1",
-      "nome": "Colecao teste",
-      "createdAt": "2026-04-19T23:15:20.870Z"
+      "id": "GJ_b7-9kmr4",
+      "userId": "eukm5VB8a1U",
+      "nome": "Favs",
+      "createdAt": "2026-04-23T00:40:59.744Z"
     }
   ],
   "collectionCards": [
@@ -108,6 +142,11 @@
       "id": "K6worMdcsSs",
       "collectionId": "collection-1776656329185",
       "cardId": "card-1776656308842"
+    },
+    {
+      "id": "9bSrUAX8Of0",
+      "collectionId": "collection-1776904859744",
+      "cardId": "card-1776904837525"
     }
   ],
   "folders": [
@@ -117,19 +156,9 @@
       "nome": "Cartas favoritas"
     },
     {
-      "id": "u1-binder",
-      "userId": "u1",
-      "nome": "Binder"
-    },
-    {
       "id": "u1-outras",
       "userId": "u1",
       "nome": "Outras"
-    },
-    {
-      "id": "u1-folder-1776639971938",
-      "userId": "u1",
-      "nome": "Teste"
     },
     {
       "id": "u2-favoritas",
@@ -195,16 +224,24 @@
       "id": "ckRiEWyupYI",
       "userId": "EyFkxRYqBr8",
       "nome": "Cartas favoritas"
+    },
+    {
+      "id": "AL3_oL1FQmc",
+      "userId": "eukm5VB8a1U",
+      "nome": "Outras"
+    },
+    {
+      "id": "2npgoKkeBJ0",
+      "userId": "eukm5VB8a1U",
+      "nome": "Binder"
+    },
+    {
+      "id": "Q9l_YA9RZwM",
+      "userId": "eukm5VB8a1U",
+      "nome": "Cartas favoritas"
     }
   ],
   "photos": [
-    {
-      "id": "BspjIdLDDMQ",
-      "userId": "u1",
-      "folderId": "u1-binder",
-      "titulo": "Binder novo",
-      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/0b19be27-1d64-4bfa-ab38-337770a46183.jpeg"
-    },
     {
       "id": "hdaA-ap26gI",
       "userId": "EyFkxRYqBr8",

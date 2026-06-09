@@ -1305,7 +1305,7 @@ export default function HomeScreen() {
 </TouchableOpacity>
             <TouchableOpacity
               style={styles.avatarButton}
-              onPress={() => Alert.alert('Em breve', 'Perfil sera implementado em breve.')}
+              onPress={() => router.push('/profile')}
             >
               <Text style={styles.avatarIcon}>PERFIL</Text>
             </TouchableOpacity>
@@ -1582,115 +1582,9 @@ export default function HomeScreen() {
               )}
             </View>
 
-            <SectionTitle
-              title="Minhas fotos"
-              subtitle={`${photoFolders.length} pastas de fotos`}
-            />
-            <View style={styles.folderSearchRow}>
-  <View style={styles.folderSearchBox}>
-    <TextInput
-      value={folderSearch}
-      onChangeText={setFolderSearch}
-      placeholder="Pesquisar pasta existente"
-      placeholderTextColor="#9A8E80"
-      style={styles.folderSearchInput}
-    />
-    <Text style={styles.searchIcon}>⌕</Text>
-  </View>
-
-  <TouchableOpacity
-    style={styles.folderAddButton}
-    onPress={() => setIsCreateFolderModalOpen(true)}
-  >
-    <Text style={styles.folderAddButtonText}>+</Text>
-  </TouchableOpacity>
-</View>
-
-            <View style={styles.photoFolderList}>
-              {filteredPhotoFolders.map((folder) => (
-                <View key={folder.id} style={styles.photoFolderCard}>
-                  <TouchableOpacity
-                    style={styles.folderDeleteButton}
-                    onPress={() => handleConfirmDeletePhotoFolder(folder.id, folder.nome)}
-                  >
-                    <Text style={styles.folderDeleteButtonText}>Excluir pasta</Text>
-                  </TouchableOpacity>
-                  <View style={styles.photoFolderHeader}>
-                    <View>
-                      <Text style={styles.photoFolderName}>{folder.nome}</Text>
-                      <Text style={styles.photoFolderMeta}>
-                        {folder.fotos.length} fotos
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.photoAddRow}>
-                    <TouchableOpacity
-                      style={styles.addPhotoButton}
-                      onPress={() => handleAddPhoto(folder.id)}
-                    >
-                      <Text style={styles.addPhotoButtonText}>+ Foto</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {folder.fotos.length === 0 ? (
-                    <Text style={styles.photoFolderEmpty}>
-                      Sem fotos ainda.
-                    </Text>
-                  ) : (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.photoPreviewRow}
-                    >
-                      {folder.fotos.slice(0, 6).map((foto) => (
-                        <View key={foto.id} style={styles.photoPreviewCard}>
-                          <TouchableOpacity
-                            style={styles.photoPreviewPressable}
-                            onPress={() =>
-                              setPhotoPreview({
-                                folderId: folder.id,
-                                photo: foto,
-                              })
-                            }
-                          >
-                            <Image
-                              source={{ uri: foto.imageUrl }}
-                              style={styles.photoPreviewImage}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.photoDeleteButton}
-                            onPress={() =>
-                              confirmDeletePhoto(
-                                folder.id,
-                                foto.id,
-                                foto.titulo,
-                              )
-                            }
-                          >
-                            <Text style={styles.photoDeleteButtonText}>X</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              openRenamePhoto(folder.id, foto.id, foto.titulo)
-                            }
-                            activeOpacity={0.8}
-                          >
-                            <Text
-                              style={styles.photoPreviewTitle}
-                              numberOfLines={1}
-                            >
-                              {foto.titulo}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
-              ))}
-            </View>
+            <Text style={styles.emptyText}>
+              O gerenciamento de fotos foi movido para a tela de Perfil.
+            </Text>
           </>
         )}
 
@@ -2258,6 +2152,10 @@ export default function HomeScreen() {
               style={[styles.navItem, active && styles.navItemActive]}
               onPress={() => {
                 if (!active) {
+                  if (item.key === "perfil") {
+                    router.push('/profile');
+                    return;
+                  }
                   Alert.alert(
                     "Em breve",
                     `${item.label} sera implementado em breve.`,
