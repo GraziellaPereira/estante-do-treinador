@@ -129,6 +129,69 @@
       "userId": "eukm5VB8a1U"
     }
   ],
+  "catalogCards": [
+    {
+      "id": "sv1-001",
+      "nome": "Sprigatito",
+      "codigo": "SV1-001",
+      "colecao": "Scarlet & Violet",
+      "pokemon": "Sprigatito",
+      "tipo": "Grama",
+      "raridade": "Comum",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png"
+    },
+    {
+      "id": "sv1-036",
+      "nome": "Pikachu",
+      "codigo": "SV1-036",
+      "colecao": "Scarlet & Violet",
+      "pokemon": "Pikachu",
+      "tipo": "Eletrico",
+      "raridade": "Comum",
+      "imageUrl": "https://images.pokemontcg.io/sv1/62.png"
+    },
+    {
+      "id": "sv1-198",
+      "nome": "Miraidon ex",
+      "codigo": "SV1-198",
+      "colecao": "Scarlet & Violet",
+      "pokemon": "Miraidon",
+      "tipo": "Eletrico",
+      "raridade": "Ultra Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/244.png"
+    },
+    {
+      "id": "swsh12-160",
+      "nome": "Lugia V",
+      "codigo": "SWSH12-160",
+      "colecao": "Silver Tempest",
+      "pokemon": "Lugia",
+      "tipo": "Incolor",
+      "raridade": "Ultra Rara",
+      "imageUrl": "https://images.pokemontcg.io/swsh12/138.png"
+    },
+    {
+      "id": "swsh12-188",
+      "nome": "Serena",
+      "codigo": "SWSH12-188",
+      "colecao": "Silver Tempest",
+      "pokemon": "Treinador",
+      "tipo": "Suporte",
+      "raridade": "Ultra Rara",
+      "imageUrl": "https://images.pokemontcg.io/swsh12/193.png"
+    },
+    {
+      "id": "cel25-004",
+      "nome": "Pikachu",
+      "codigo": "CEL25-004",
+      "colecao": "Celebrations",
+      "pokemon": "Pikachu",
+      "tipo": "Eletrico",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/cel25/5.png"
+    }
+  ],
+  "wishlist": [],
   "collections": [
     {
       "id": "GJ_b7-9kmr4",

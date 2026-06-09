@@ -2156,6 +2156,10 @@ export default function HomeScreen() {
                     router.push('/profile');
                     return;
                   }
+                  if (item.key === "explorar") {
+                    router.push('/explore');
+                    return;
+                  }
                   Alert.alert(
                     "Em breve",
                     `${item.label} sera implementado em breve.`,

@@ -16,6 +16,14 @@ export default function RootLayout() {
         name="profile"
         options={{ title: 'Perfil', headerShown: false }}
       />
+      <Stack.Screen
+        name="explore"
+        options={{ title: 'Explorar', headerShown: false }}
+      />
+      <Stack.Screen
+        name="card-detail"
+        options={{ title: 'Detalhe da carta', headerShown: false }}
+      />
     </Stack>
   );
 }
