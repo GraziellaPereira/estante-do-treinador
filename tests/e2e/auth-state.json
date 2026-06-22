@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:8081",
+      "localStorage": [
+        {
+          "name": "estante:authUser:v1",
+          "value": "TesteSpec2NovaVersao"
+        }
+      ]
+    }
+  ]
+}

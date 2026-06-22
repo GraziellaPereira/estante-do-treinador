@@ -12,7 +12,7 @@
     },
     {
       "usuario": "master",
-      "senha": "Master",
+      "senha": "Master1813",
       "cards": [],
       "collections": [],
       "photoFolders": [
@@ -105,6 +105,232 @@
         }
       ],
       "id": "eukm5VB8a1U"
+    },
+    {
+      "usuario": "hego morrau",
+      "senha": "12345",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "Jjp1TKr_I_A"
+    },
+    {
+      "usuario": "grazizizi",
+      "senha": "1234",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "6ANWmbwelPI"
+    },
+    {
+      "usuario": "TesteSpec2",
+      "senha": "12345@",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "BoFd4MhsjRU"
+    },
+    {
+      "usuario": "testespec2novo",
+      "senha": "12345@",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "y3tk5EwSMSc"
+    },
+    {
+      "usuario": "testspec2_2026-06-21T210",
+      "senha": "12345@",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "ac8Hs1oYd4o"
+    },
+    {
+      "usuario": "testspec2_2026-06-21T211",
+      "senha": "12345@",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "Ubk-gTNx1ZY"
+    },
+    {
+      "usuario": "TesteSpec2NovaVersao",
+      "senha": "12345@",
+      "nome": "TesteSpec2NovaVersao",
+      "id": "6PA3gxquyIk"
+    },
+    {
+      "usuario": "TesteAutomatizadoNovo",
+      "senha": "12345@",
+      "nome": "TesteAutomatizadoNovo",
+      "username": "TesteAutomatizadoNovo",
+      "password": "12345@",
+      "cards": [],
+      "collections": [],
+      "wishlist": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "8WKY4Y8_lIo"
+    },
+    {
+      "usuario": "TesteAutomatizadoAtual",
+      "senha": "12345@",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "Gv6vEh1XvZA"
+    },
+    {
+      "usuario": "182",
+      "senha": "12345678",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "lgQCoT92QGk"
     }
   ],
   "cards": [
@@ -127,6 +353,153 @@
       "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/609f091d-73dd-4dde-9ee9-d082d06d3438.jpeg",
       "capturadaEm": "2026-04-22T15:00:00.000Z",
       "userId": "eukm5VB8a1U"
+    },
+    {
+      "id": "4jjpC_kIKG0",
+      "nome": "Clefairy",
+      "numero": "63/108",
+      "set": "Evoluções",
+      "raridade": "Rara",
+      "raridadeRank": 30,
+      "imageUrl": "https://assets.tcgdex.net/pt/xy/xy12/63/high.png",
+      "capturadaEm": "2026-06-21T15:00:00.000Z",
+      "setId": "xy12",
+      "setLogoUrl": "https://assets.tcgdex.net/univ/xy/xy12/symbol.png",
+      "totalSetCards": 108,
+      "pokemon": "Clefairy",
+      "tipo": "Fada",
+      "categoria": "Pokémon",
+      "artista": "Ken Sugimori",
+      "serie": "XY",
+      "userId": "O0P03ES0Anc"
+    },
+    {
+      "id": "YCm-2YRgQR8",
+      "nome": "Clefairy",
+      "numero": "094/88",
+      "set": "Equilíbrio Perfeito",
+      "raridade": "Rara",
+      "raridadeRank": 70,
+      "imageUrl": "https://assets.tcgdex.net/pt/me/me03/094/high.png",
+      "capturadaEm": "2026-06-21T15:00:00.000Z",
+      "setId": "me03",
+      "setLogoUrl": "https://assets.tcgdex.net/pt/me/me03/logo.png",
+      "totalSetCards": 88,
+      "pokemon": "Clefairy",
+      "tipo": "Psíquico",
+      "categoria": "Pokémon",
+      "artista": "Cona Nitanda",
+      "serie": "Megaevolução",
+      "userId": "O0P03ES0Anc"
+    },
+    {
+      "id": "rc6s_TKWDIY",
+      "nome": "Zoroark ex do N",
+      "numero": "286/217",
+      "set": "Heróis Excelsos",
+      "raridade": "Rara",
+      "raridadeRank": 80,
+      "imageUrl": "https://assets.tcgdex.net/pt/me/me02.5/286/high.png",
+      "capturadaEm": "2026-06-21T15:00:00.000Z",
+      "setId": "me02.5",
+      "setLogoUrl": "https://assets.tcgdex.net/pt/me/me02.5/logo.png",
+      "totalSetCards": 217,
+      "pokemon": "Zoroark",
+      "tipo": "Sombrio",
+      "categoria": "Pokémon",
+      "artista": "Raita Kazama",
+      "serie": "Megaevolução",
+      "userId": "O0P03ES0Anc"
+    },
+    {
+      "id": "TlGVhbN7gt4",
+      "nome": "Carta Spec",
+      "numero": "99/99",
+      "set": "SpecSet",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png",
+      "capturadaEm": "2026-06-21T22:29:00.130Z",
+      "usuario": "TesteSpec2NovaVersao"
+    },
+    {
+      "id": "nI7AkFDBq8E",
+      "nome": "Carta Spec 09",
+      "numero": "99/99",
+      "set": "SpecSet",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png",
+      "capturadaEm": "2026-06-21T22:29:03.482Z",
+      "usuario": "TesteSpec2NovaVersao"
+    },
+    {
+      "id": "-TLOiB_KOtc",
+      "nome": "Carta Spec",
+      "numero": "99/99",
+      "set": "SpecSet",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png",
+      "capturadaEm": "2026-06-21T22:31:56.253Z",
+      "usuario": "TesteSpec2NovaVersao"
+    },
+    {
+      "id": "1w075cFBdao",
+      "nome": "Carta Spec 09",
+      "numero": "99/00",
+      "set": "SpecSet",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png",
+      "capturadaEm": "2026-06-21T22:32:00.000Z",
+      "usuario": "TesteSpec2NovaVersao"
+    },
+    {
+      "id": "-34i34GMrvs",
+      "nome": "Carta Spec",
+      "numero": "99/99",
+      "set": "SpecSet",
+      "raridade": "Rara",
+      "imageUrl": "https://images.pokemontcg.io/sv1/13.png",
+      "capturadaEm": "2026-06-21T22:33:54.120Z",
+      "usuario": "TesteSpec2NovaVersao"
+    },
+    {
+      "id": "H9w8M78cAjw",
+      "nome": "Ampharos EX",
+      "numero": "27/98",
+      "set": "Origens Ancestrais",
+      "raridade": "Ultra Rara",
+      "raridadeRank": 60,
+      "imageUrl": "https://assets.tcgdex.net/pt/xy/xy7/27/high.png",
+      "capturadaEm": "2026-06-22T15:00:00.000Z",
+      "setId": "xy7",
+      "setLogoUrl": "https://assets.tcgdex.net/univ/xy/xy7/symbol.png",
+      "totalSetCards": 98,
+      "pokemon": "Ampharos",
+      "tipo": "Elétrico",
+      "categoria": "Pokémon",
+      "artista": "Eske Yoshinob",
+      "serie": "XY",
+      "userId": "O0P03ES0Anc"
+    },
+    {
+      "id": "s5Zg-IsMsr0",
+      "cardId": "me02.5-074",
+      "catalogCardId": "me02.5-074",
+      "nome": "Clefairy",
+      "numero": "074/217",
+      "set": "Heróis Excelsos",
+      "raridade": "Comum",
+      "raridadeRank": 10,
+      "imageUrl": "https://assets.tcgdex.net/pt/me/me02.5/074/high.png",
+      "capturadaEm": "2026-06-07T15:00:00.000Z",
+      "setId": "me02.5",
+      "setLogoUrl": "https://assets.tcgdex.net/pt/me/me02.5/logo.png",
+      "totalSetCards": 217,
+      "pokemon": "Clefairy",
+      "tipo": "Psíquico",
+      "categoria": "Pokémon",
+      "artista": "satoma",
+      "serie": "Megaevolução",
+      "userId": "O0P03ES0Anc"
     }
   ],
   "catalogCards": [
@@ -191,13 +564,130 @@
       "imageUrl": "https://images.pokemontcg.io/cel25/5.png"
     }
   ],
-  "wishlist": [],
+  "wishlist": [
+    {
+      "id": "IoEx7LrKUGw",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me02.5-286",
+      "createdAt": "2026-06-20T20:09:59.808Z",
+      "updatedAt": "2026-06-20T20:09:59.808Z"
+    },
+    {
+      "id": "BREjqDD0WcY",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me04-001",
+      "createdAt": "2026-06-22T03:24:26.027Z",
+      "updatedAt": "2026-06-22T03:24:26.027Z"
+    },
+    {
+      "id": "favn-p9ZggU",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me04-004",
+      "createdAt": "2026-06-22T03:53:12.890Z",
+      "updatedAt": "2026-06-22T03:53:12.890Z"
+    },
+    {
+      "id": "S-5ISW8nWVs",
+      "userId": "O0P03ES0Anc",
+      "cardId": "sv09-167",
+      "createdAt": "2026-06-22T03:54:03.901Z",
+      "updatedAt": "2026-06-22T03:54:03.901Z"
+    },
+    {
+      "id": "nCLvRv3hs_I",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me04-116",
+      "createdAt": "2026-06-22T05:23:39.076Z",
+      "updatedAt": "2026-06-22T05:23:39.076Z"
+    },
+    {
+      "id": "5REQ4MmHiwc",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me03-001",
+      "createdAt": "2026-06-22T05:35:41.016Z",
+      "updatedAt": "2026-06-22T05:35:41.016Z"
+    },
+    {
+      "id": "Lg9MVxhUDhY",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me03-002",
+      "createdAt": "2026-06-22T05:35:46.919Z",
+      "updatedAt": "2026-06-22T05:35:46.919Z"
+    },
+    {
+      "id": "KgsabRCUKpI",
+      "userId": "O0P03ES0Anc",
+      "cardId": "me04-087",
+      "createdAt": "2026-06-22T05:41:08.906Z",
+      "updatedAt": "2026-06-22T05:41:08.906Z"
+    }
+  ],
   "collections": [
     {
       "id": "GJ_b7-9kmr4",
       "userId": "eukm5VB8a1U",
       "nome": "Favs",
       "createdAt": "2026-04-23T00:40:59.744Z"
+    },
+    {
+      "id": "sUuenzsbaXw",
+      "userId": "Jjp1TKr_I_A",
+      "nome": "Rret",
+      "createdAt": "2026-06-21T19:38:31.230Z"
+    },
+    {
+      "id": "CRTGxSQeqq4",
+      "userId": "Jjp1TKr_I_A",
+      "nome": "1234",
+      "createdAt": "2026-06-21T19:46:45.292Z"
+    },
+    {
+      "id": "_XlXS0k_tek",
+      "userId": "6PA3gxquyIk",
+      "nome": "teste coleção 1782080943482",
+      "createdAt": "2026-06-21T22:29:04.249Z"
+    },
+    {
+      "id": "qOHfN4JfSw8",
+      "userId": "6PA3gxquyIk",
+      "nome": "teste coleção 1782081120000",
+      "createdAt": "2026-06-21T22:32:00.962Z"
+    },
+    {
+      "id": "b2mJ_cyM_TE",
+      "userId": "6PA3gxquyIk",
+      "nome": "teste coleção 1782081237836",
+      "createdAt": "2026-06-21T22:33:58.030Z"
+    },
+    {
+      "id": "44PjjdCUybc",
+      "userId": null,
+      "nome": "teste coleção",
+      "createdAt": "2026-06-22T00:05:24.183Z"
+    },
+    {
+      "id": "eyODyFMn7bM",
+      "userId": null,
+      "nome": "teste coleção",
+      "createdAt": "2026-06-22T00:16:41.441Z"
+    },
+    {
+      "id": "VLn90ghtZAw",
+      "userId": null,
+      "nome": "teste coleção",
+      "createdAt": "2026-06-22T00:25:48.654Z"
+    },
+    {
+      "id": "0RNPPvk3XtQ",
+      "userId": "O0P03ES0Anc",
+      "nome": "Novo teste",
+      "createdAt": "2026-06-22T03:52:54.854Z"
+    },
+    {
+      "id": "o2tgZlOsosY",
+      "userId": "8WKY4Y8_lIo",
+      "nome": "teste coleção",
+      "createdAt": "2026-06-22T05:28:03.850Z"
     }
   ],
   "collectionCards": [
@@ -210,6 +700,86 @@
       "id": "9bSrUAX8Of0",
       "collectionId": "collection-1776904859744",
       "cardId": "card-1776904837525"
+    },
+    {
+      "id": "_0ZQjdmMBvg",
+      "collectionId": "collection-1781990790154",
+      "cardId": "me02.5-276"
+    },
+    {
+      "id": "t_EmctVZgVE",
+      "collectionId": "collection-1781990790154",
+      "cardId": "me04-090"
+    },
+    {
+      "id": "dn5UJSW07Pg",
+      "collectionId": "collection-1781990790154",
+      "cardId": "me04-105"
+    },
+    {
+      "id": "793uyyyLV_o",
+      "collectionId": "collection-1782065538475",
+      "cardId": "me02.5-286"
+    },
+    {
+      "id": "WqoYFeIFdig",
+      "collectionId": "collection-1782065538475",
+      "cardId": "4jjpC_kIKG0"
+    },
+    {
+      "id": "5j944fyj0Vk",
+      "collectionId": "collection-1782065538475",
+      "cardId": "YCm-2YRgQR8"
+    },
+    {
+      "id": "OeNO4rGxK70",
+      "collectionId": null,
+      "cardId": "YCm-2YRgQR8"
+    },
+    {
+      "id": "nqhY_0Q-Z3w",
+      "collectionId": null,
+      "cardId": "rc6s_TKWDIY"
+    },
+    {
+      "id": "QJhInpQJdnU",
+      "collectionId": "collection-1782071205292",
+      "cardId": "xy7-21"
+    },
+    {
+      "id": "2JOELjaPkj4",
+      "collectionId": "collection-1782100374853",
+      "cardId": "4jjpC_kIKG0"
+    },
+    {
+      "id": "TFQ4avjFa-k",
+      "collectionId": "collection-1782100374853",
+      "cardId": "rc6s_TKWDIY"
+    },
+    {
+      "id": "U-otprJjwQY",
+      "collectionId": "collection-1782100374853",
+      "cardId": "H9w8M78cAjw"
+    },
+    {
+      "id": "wiqilSMC_bg",
+      "collectionId": "collection-1782100374853",
+      "cardId": "YCm-2YRgQR8"
+    },
+    {
+      "id": "dS42ucxcdTI",
+      "collectionId": "0RNPPvk3XtQ",
+      "cardId": "4jjpC_kIKG0"
+    },
+    {
+      "id": "WpvRBJ0sgMY",
+      "collectionId": "0RNPPvk3XtQ",
+      "cardId": "YCm-2YRgQR8"
+    },
+    {
+      "id": "sB_vWGoQmvM",
+      "collectionId": "0RNPPvk3XtQ",
+      "cardId": "rc6s_TKWDIY"
     }
   ],
   "folders": [
@@ -302,6 +872,216 @@
       "id": "Q9l_YA9RZwM",
       "userId": "eukm5VB8a1U",
       "nome": "Cartas favoritas"
+    },
+    {
+      "id": "RQO5zGohUZs",
+      "userId": "Jjp1TKr_I_A",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "TTol823Fqpk",
+      "userId": "Jjp1TKr_I_A",
+      "nome": "Binder"
+    },
+    {
+      "id": "sIWlMeLxifE",
+      "userId": "Jjp1TKr_I_A",
+      "nome": "Outras"
+    },
+    {
+      "id": "X80PvbTf4y8",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "8oDt6dQNBRI",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "IRGZFIIiPFA",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "VsgZVYKZB34",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "xJaEef3YhRk",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "UCbTLkevmrI",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "zVol3BNvZEQ",
+      "userId": "ac8Hs1oYd4o",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "f-kSArP0qEw",
+      "userId": "ac8Hs1oYd4o",
+      "nome": "Binder"
+    },
+    {
+      "id": "qbZT_VW_LRQ",
+      "userId": "ac8Hs1oYd4o",
+      "nome": "Outras"
+    },
+    {
+      "id": "uuB537IRoGI",
+      "userId": "Ubk-gTNx1ZY",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "7qs_SOv3N9I",
+      "userId": "Ubk-gTNx1ZY",
+      "nome": "Binder"
+    },
+    {
+      "id": "_aecFpeKbOg",
+      "userId": "Ubk-gTNx1ZY",
+      "nome": "Outras"
+    },
+    {
+      "id": "53Y-cICUwL4",
+      "userId": "6PA3gxquyIk",
+      "nome": "Binder"
+    },
+    {
+      "id": "RX9tyoVoF9M",
+      "userId": "6PA3gxquyIk",
+      "nome": "Outras"
+    },
+    {
+      "id": "kcQY0l17KVc",
+      "userId": "6PA3gxquyIk",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "hBOpWD89h3A",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "1Cye1fAT0-M",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "sRGbyMgmCUM",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "z3ux-IvB4Yo",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "XLIwPc9WcX0",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "VmlbdBez9yo",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "ZNTL_pDLF_M",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "nZIADSrkOww",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "7VdOnTwBMVk",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "rvHvu7rM88g",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "Dmw-UtMAtkA",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "wr2VR2Nb6bQ",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "2kQdpI4esCw",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "N3zfOmBQ5ss",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "t8UmcG7iSN8",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "NYMDNhhltGk",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "Lz9P-AjEMT8",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "8Roj02iT3RE",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "7273ISXJimA",
+      "userId": null,
+      "nome": "Outras"
+    },
+    {
+      "id": "LXeO03QbLWU",
+      "userId": null,
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "m4NZIUvS2Jk",
+      "userId": null,
+      "nome": "Binder"
+    },
+    {
+      "id": "TcNOujdZGYs",
+      "userId": "8WKY4Y8_lIo",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "6lsSffGz2sI",
+      "userId": "8WKY4Y8_lIo",
+      "nome": "Binder"
+    },
+    {
+      "id": "YmoiY2PuHew",
+      "userId": "8WKY4Y8_lIo",
+      "nome": "Outras"
     }
   ],
   "photos": [
@@ -311,6 +1091,22 @@
       "folderId": "zCW5utiIJVE",
       "titulo": "Zekrom do N",
       "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/a8f13e75-b0d9-449f-9191-83b11201c144.jpeg"
+    },
+    {
+      "id": "r5EkK_YqepQ",
+      "userId": "O0P03ES0Anc",
+      "folderId": "perfil",
+      "titulo": "Foto do perfil",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/dd5870f4-ba80-4f10-b8e6-7aaed01c2772.jpeg",
+      "createdAt": "2026-06-14T21:37:14.442Z"
+    },
+    {
+      "id": "3v2aulZz71Y",
+      "userId": "O0P03ES0Anc",
+      "folderId": "perfil",
+      "titulo": "Teste",
+      "imageUrl": "file:///data/user/0/host.exp.exponent/cache/ImagePicker/ff1bfb5b-064e-4395-a180-eced360c24a8.jpeg",
+      "createdAt": "2026-06-14T21:37:22.856Z"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

@@ -3,16 +3,29 @@ export type Card = {
   nome: string;
   codigo: string;
   colecao: string;
+  setId?: string;
   pokemon: string;
   tipo: string;
+  serie?: string;
   imageUrl: string;
   raridade?: string;
+  artista?: string;
+  hp?: string;
+  categoria?: string;
+  estagio?: string;
+  regulacao?: string;
+  dataLancamento?: string | null;
+  raridadeRank?: number;
+  setLogoUrl?: string;
+totalSetCards?: number;
+capturada?: boolean;
+  
 };
 
 export type ExploreFilter = {
   query: string;
   colecao: string;
-  pokemon: string;
+  raridade: string;
   tipo: string;
 };
 

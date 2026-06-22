@@ -14,10 +14,44 @@ import {
 } from "react-native";
 import BASE_URL from "../../apiService/api";
 import { BuscarCartaPorId } from "../services/CatalogService";
-import { UpsertWishlistItem } from "../services/WishlistService";
+import {
+  BuscarWishlist,
+  RemoverWishlistItem,
+  UpsertWishlistItem,
+} from "../services/WishlistService";
 import type { Card, UsuarioApi } from "../types/explore";
 
 const AUTH_SESSION_STORAGE_KEY = "estante:authUser:v1";
+
+function ObterImagemAltaQualidade(imageUrl?: string) {
+  const url = String(imageUrl || "").trim();
+
+  if (!url) {
+    return "";
+  }
+
+  if (url.includes("/high.png") || url.includes("/high.webp")) {
+    return url;
+  }
+
+  if (url.includes("/low.png")) {
+    return url.replace("/low.png", "/high.png");
+  }
+
+  if (url.includes("/low.webp")) {
+    return url.replace("/low.webp", "/high.webp");
+  }
+
+  if (url.includes("/low")) {
+    return url.replace(/\/low\/?$/i, "/high.png");
+  }
+
+  if (url.includes("assets.tcgdex.net") && !url.match(/\.(webp|png|jpg|jpeg)$/i)) {
+    return `${url.replace(/\/$/, "")}/high.png`;
+  }
+
+  return url;
+}
 
 async function BuscarUserId() {
   const usuarioSessao = (await AsyncStorage.getItem(AUTH_SESSION_STORAGE_KEY))?.trim() || "";
@@ -42,16 +76,47 @@ async function BuscarUserId() {
 
 export default function CardDetailScreen() {
   const router = useRouter();
-  const { cardId } = useLocalSearchParams<{ cardId?: string }>();
+  const { cardId, origem, wishlistItemId } = useLocalSearchParams<{
+    cardId?: string;
+    origem?: string;
+    wishlistItemId?: string;
+  }>();
+
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [userId, setUserId] = useState("");
   const [card, setCard] = useState<Card | null>(null);
+  const [wishlistItemAtualId, setWishlistItemAtualId] = useState("");
+  const [estaNaWishlist, setEstaNaWishlist] = useState(false);
+
+  const veioDaWishlist = origem === "wishlist";
+
+  const SincronizarWishlistDaCarta = useCallback(
+    async (idUsuario: string, idCarta: string) => {
+      const itensWishlist = await BuscarWishlist(idUsuario);
+      const itemEncontrado = itensWishlist.find(
+        (item) => String(item.cardId) === String(idCarta),
+      );
+
+      const idEncontrado =
+        itemEncontrado?.id !== undefined && itemEncontrado?.id !== null
+          ? String(itemEncontrado.id)
+          : "";
+
+      setWishlistItemAtualId(idEncontrado);
+      setEstaNaWishlist(!!idEncontrado);
+
+      return idEncontrado;
+    },
+    [],
+  );
 
   const CarregarDetalhe = useCallback(async () => {
     setCarregando(true);
+
     try {
       const idUsuario = await BuscarUserId();
+
       if (!idUsuario) {
         Alert.alert("Sessao expirada", "Faca login novamente.");
         router.replace("/");
@@ -62,16 +127,27 @@ export default function CardDetailScreen() {
 
       if (!cardId) {
         setCard(null);
+        setEstaNaWishlist(false);
+        setWishlistItemAtualId("");
         return;
       }
 
-      setCard(await BuscarCartaPorId(cardId));
-    } catch {
+      const detalheCarta = await BuscarCartaPorId(String(cardId));
+      setCard(detalheCarta);
+
+      if (wishlistItemId) {
+        setWishlistItemAtualId(String(wishlistItemId));
+        setEstaNaWishlist(true);
+      }
+
+      await SincronizarWishlistDaCarta(idUsuario, String(cardId));
+    } catch (error) {
+      console.log("Erro ao carregar detalhe:", error);
       Alert.alert("Erro", "Nao foi possivel carregar o detalhe da carta.");
     } finally {
       setCarregando(false);
     }
-  }, [cardId, router]);
+  }, [cardId, wishlistItemId, router, SincronizarWishlistDaCarta]);
 
   useEffect(() => {
     void CarregarDetalhe();
@@ -83,12 +159,64 @@ export default function CardDetailScreen() {
       return;
     }
 
+    if (estaNaWishlist) {
+      return;
+    }
+
     setSalvando(true);
+
     try {
-      await UpsertWishlistItem(userId, card.id);
+      const itemCriado = await UpsertWishlistItem(userId, card.id);
+
+      if (itemCriado?.id !== undefined && itemCriado?.id !== null) {
+        setWishlistItemAtualId(String(itemCriado.id));
+      } else {
+        await SincronizarWishlistDaCarta(userId, card.id);
+      }
+
+      setEstaNaWishlist(true);
       Alert.alert("Wishlist", "Carta adicionada a sua Wishlist.");
-    } catch {
+    } catch (error) {
+      console.log("Erro ao adicionar wishlist:", error);
       Alert.alert("Erro", "Nao foi possivel adicionar a carta a Wishlist.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const RemoverDaWishlist = async () => {
+    if (!userId || !card?.id) {
+      Alert.alert("Erro", "Carta ou usuario invalido.");
+      return;
+    }
+
+    setSalvando(true);
+
+    try {
+      let itemId = String(wishlistItemAtualId || wishlistItemId || "").trim();
+
+      if (!itemId) {
+        itemId = await SincronizarWishlistDaCarta(userId, card.id);
+      }
+
+      if (!itemId) {
+        Alert.alert("Erro", "Nao encontrei esse item na sua Wishlist.");
+        return;
+      }
+
+      await RemoverWishlistItem(itemId);
+      setWishlistItemAtualId("");
+      setEstaNaWishlist(false);
+
+      Alert.alert("Wishlist", "Carta removida da sua Wishlist.", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      console.log("Erro ao remover wishlist:", error);
+      Alert.alert("Erro", "Nao foi possivel remover a carta da Wishlist.");
     } finally {
       setSalvando(false);
     }
@@ -102,6 +230,8 @@ export default function CardDetailScreen() {
       </View>
     );
   }
+
+  const imagemCarta = ObterImagemAltaQualidade(card?.imageUrl);
 
   return (
     <LinearGradient
@@ -126,8 +256,13 @@ export default function CardDetailScreen() {
           </View>
         ) : (
           <View style={styles.detailCard}>
-            {card.imageUrl ? (
-              <Image source={{ uri: card.imageUrl }} style={styles.cardImage} />
+            {imagemCarta ? (
+              <Image
+                key={imagemCarta}
+                source={{ uri: imagemCarta }}
+                style={styles.cardImage}
+                resizeMode="contain"
+              />
             ) : (
               <View style={styles.imageFallback}>
                 <Text style={styles.imageFallbackText}>Sem imagem</Text>
@@ -141,12 +276,36 @@ export default function CardDetailScreen() {
             <InfoLinha label="Pokemon" valor={card.pokemon} />
             <InfoLinha label="Tipo" valor={card.tipo} />
             <InfoLinha label="Raridade" valor={card.raridade || "Nao informada"} />
+            <InfoLinha label="Artista" valor={card.artista || "Nao informado"} />
 
-            <TouchableOpacity style={styles.primaryButton} onPress={() => void AdicionarWishlist()} disabled={salvando}>
-              <Text style={styles.primaryButtonText}>
-                {salvando ? "Salvando..." : "Adicionar a Wishlist"}
-              </Text>
-            </TouchableOpacity>
+            {veioDaWishlist ? (
+              <TouchableOpacity
+                style={[styles.primaryButton, styles.removeWishlistButton]}
+                onPress={() => void RemoverDaWishlist()}
+                disabled={salvando}
+              >
+                <Text style={[styles.primaryButtonText, styles.removeWishlistButtonText]}>
+                  {salvando ? "Removendo..." : "Remover da Wishlist"}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  estaNaWishlist && styles.primaryButtonWishlistActive,
+                ]}
+                onPress={() => void AdicionarWishlist()}
+                disabled={salvando || estaNaWishlist}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {salvando
+                    ? "Salvando..."
+                    : estaNaWishlist
+                      ? "Adicionada à Wishlist"
+                      : "Adicionar à Wishlist"}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </ScrollView>
@@ -154,7 +313,7 @@ export default function CardDetailScreen() {
   );
 }
 
-function InfoLinha({ label, valor }: { label: string; valor: string }) {
+function InfoLinha({ label, valor }: { label: string; valor?: string }) {
   return (
     <View style={styles.infoBox}>
       <Text style={styles.infoLabel}>{label}</Text>
@@ -233,7 +392,7 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: "100%",
-    height: 380,
+    height: 480,
     borderRadius: 12,
     backgroundColor: "#0E0A07",
     resizeMode: "contain",
@@ -282,9 +441,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#7E6A3A",
     paddingVertical: 12,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(228, 181, 109, 0.40)",
+  },
+  primaryButtonWishlistActive: {
+    backgroundColor: "#E4B56D",
+    borderColor: "#F8D894",
+    shadowColor: "#E4B56D",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  removeWishlistButton: {
+    borderColor: "#A63A2D",
+    backgroundColor: "rgba(166, 58, 45, 0.30)",
   },
   primaryButtonText: {
     color: "#1A130A",
     fontWeight: "900",
+  },
+  removeWishlistButtonText: {
+    color: "#F5B5AB",
   },
 });

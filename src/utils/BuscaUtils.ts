@@ -25,23 +25,26 @@ export function CartaAtendeFiltros(card: Card, filtros: ExploreFilter) {
 
   const atendeColecao =
     filtros.colecao === FILTRO_TODOS ||
+    // filtros.colecao pode ser o id da coleção (quando vindo do TCGdex) ou o nome
+    (card.setId && card.setId === filtros.colecao) ||
     NormalizarTexto(card.colecao) === NormalizarTexto(filtros.colecao);
 
-  const atendePokemon =
-    filtros.pokemon === FILTRO_TODOS ||
-    NormalizarTexto(card.pokemon) === NormalizarTexto(filtros.pokemon);
+  const atendeRaridade =
+    filtros.raridade === FILTRO_TODOS ||
+    NormalizarTexto(card.raridade) === NormalizarTexto(filtros.raridade);
 
   const atendeTipo =
     filtros.tipo === FILTRO_TODOS ||
     NormalizarTexto(card.tipo) === NormalizarTexto(filtros.tipo);
 
-  return atendeQuery && atendeColecao && atendePokemon && atendeTipo;
+  return atendeQuery && atendeColecao && atendeRaridade && atendeTipo;
 }
 
-export function OpcoesUnicas(cards: Card[], campo: keyof Pick<Card, "colecao" | "pokemon" | "tipo">) {
+export function OpcoesUnicas(cards: Card[], campo: keyof Pick<Card, "colecao" | "pokemon" | "tipo" | "raridade">) {
   const valores = cards
-    .map((card) => card[campo])
-    .filter((valor) => valor.trim().length > 0);
+    .map((card) => String(card[campo] || ""))
+    .map((v) => v.trim())
+    .filter((valor) => valor.length > 0);
 
   return [FILTRO_TODOS, ...Array.from(new Set(valores)).sort((a, b) => a.localeCompare(b))];
 }

@@ -29,6 +29,8 @@ type ApiUser = {
   senha: string;
 };
 
+import { loginSchema, cadastroSchema } from '../schemas/authSchemas';
+
 export default function LoginScreen() {
   const [mode, setMode] = useState<AuthMode>('login');
   const [usuario, setUsuario] = useState('');
@@ -39,16 +41,34 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const showAlert = (title: string, message?: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.alert) {
+        window.alert(`${title}${message ? '\n\n' + message : ''}`);
+      } else {
+        // fallback in case window.alert is not available in this environment
+        // eslint-disable-next-line no-console
+        console.warn(title, message);
+      }
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const tituloAcao = useMemo(() => (mode === 'login' ? 'Entrar' : 'Cadastrar'), [mode]);
 
   const handleLogin = async () => {
-    const usuarioTrim = usuario.trim();
-
-    if (!usuarioTrim || !senha) {
-      Alert.alert('Campos obrigatorios', 'Informe usuario e senha.');
+    const validacao = loginSchema.safeParse({
+      usuario,
+      senha,
+    });
+    if (!validacao.success) {
+      const mensagem = validacao.error.issues[0]?.message ?? 'Dados inválidos.';
+      showAlert('Login inválido', mensagem);
       return;
     }
-
+    const usuarioTrim = validacao.data.usuario;
+    const senhaValidada = validacao.data.senha;
     setLoading(true);
 
     try {
@@ -60,11 +80,13 @@ export default function LoginScreen() {
 
       const usuarios = (await resposta.json()) as ApiUser[];
       const usuarioEncontrado = usuarios.find(
-        (item) => item.usuario?.toLowerCase() === usuarioTrim.toLowerCase() && item.senha === senha
+        (item) =>
+          item.usuario?.toLowerCase() === usuarioTrim.toLowerCase() &&
+          item.senha === senhaValidada
       );
 
       if (!usuarioEncontrado) {
-        Alert.alert('Login invalido', 'Usuario ou senha incorretos.');
+        showAlert('Login invalido', 'Usuario ou senha incorretos.');
         return;
       }
 
@@ -74,30 +96,25 @@ export default function LoginScreen() {
         params: { nome: usuarioEncontrado.usuario },
       });
     } catch {
-      Alert.alert('Erro', 'Nao foi possivel fazer login. Verifique o json-server.');
+      showAlert('Erro', 'Nao foi possivel fazer login. Verifique o json-server.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCadastro = async () => {
-    const usuarioTrim = usuario.trim();
-
-    if (!usuarioTrim || !senha || !confirmarSenha) {
-      Alert.alert('Campos obrigatorios', 'Preencha usuario, senha e confirmar senha.');
+    const validacao = cadastroSchema.safeParse({
+      usuario,
+      senha,
+      confirmarSenha,
+    });
+    if (!validacao.success) {
+      const mensagem = validacao.error.issues[0]?.message ?? 'Dados inválidos.';
+      showAlert('Cadastro inválido', mensagem);
       return;
     }
-
-    if (senha !== confirmarSenha) {
-      Alert.alert('Erro', 'As senhas nao conferem.');
-      return;
-    }
-
-    if (senha.length < 4) {
-      Alert.alert('Erro', 'A senha deve ter pelo menos 4 caracteres.');
-      return;
-    }
-
+    const usuarioTrim = validacao.data.usuario;
+    const senhaValidada = validacao.data.senha;
     setLoading(true);
 
     try {
@@ -115,7 +132,7 @@ export default function LoginScreen() {
       );
 
       if (usuarioJaExiste) {
-        Alert.alert('Cadastro invalido', 'Esse usuario ja existe. Escolha outro nome.');
+        showAlert('Cadastro invalido', 'Esse usuario ja existe. Escolha outro nome.');
         return;
       }
 
@@ -126,7 +143,7 @@ export default function LoginScreen() {
         },
         body: JSON.stringify({
           usuario: usuarioTrim,
-          senha,
+          senha: senhaValidada,
           cards: [],
           collections: [],
           photoFolders: [
@@ -141,13 +158,13 @@ export default function LoginScreen() {
         throw new Error('Falha ao cadastrar usuario');
       }
 
-      Alert.alert('Sucesso', 'Cadastro realizado! Agora faca login.');
+      showAlert('Sucesso', 'Cadastro realizado! Agora faca login.');
       setMode('login');
       setSenha('');
       setConfirmarSenha('');
       setUsuario('');
     } catch {
-      Alert.alert('Erro', 'Nao foi possivel cadastrar. Verifique o json-server.');
+      showAlert('Erro', 'Nao foi possivel cadastrar. Verifique o json-server.');
     } finally {
       setLoading(false);
     }
