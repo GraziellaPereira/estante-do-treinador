@@ -28,14 +28,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-  "plugins": [
-  "expo-router",
-  [
-    "expo-image-picker",
-    {
-      "photosPermission": "Permita acesso as fotos para adicionar cartas e paginas do binder."
-    }
-  ]
-]
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita acesso as fotos para adicionar cartas e paginas do binder."
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

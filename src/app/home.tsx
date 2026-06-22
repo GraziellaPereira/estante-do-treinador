@@ -3,6 +3,7 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,20 +15,64 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { safeLog } from "../utils/safeLog";
 import BASE_URL from "../../apiService/api";
+import {
+  BuscarCartaPorCodigo,
+  BuscarCartasPorColecao,
+  BuscarDetalheCartaTcgDex,
+} from "../services/CatalogService";
+import type { Card } from "../types/explore";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 type ShelfMode = "padrao" | "todas" | "set";
 type SortMode = "recentes" | "nome" | "set";
-type Rarity = "Comum" | "Incomum" | "Rara" | "Ultra Rara" | "Promo";
+type Rarity = string;
 
 type CardItem = {
   id: string;
+  cardId?: string;
+  catalogCardId?: string;
   nome: string;
   set: string;
   numero: string;
   raridade: Rarity;
+  raridadeRank?: number;
   imageUrl: string;
   capturadaEm: string;
+
+  setId?: string;
+  setLogoUrl?: string;
+  totalSetCards?: number;
+
+  pokemon?: string;
+  tipo?: string;
+  categoria?: string;
+  artista?: string;
+  serie?: string;
+};
+
+type PokemonFavoritoItem = {
+  nome: string;
+  totalCartas: number;
+  totalNaEstante: number;
+  totalSets: number;
+  percentualDaEstante: number;
+  ultimaAtualizacao: string;
+  cartas: CardItem[];
+  cartaDestaque: CardItem | null;
+};
+
+type SetDashboardItem = {
+  setKey: string;
+  nome: string;
+  setId?: string;
+  logoUrl?: string;
+  cartasUsuario: number;
+  totalSetCards: number;
+  percentualCompleto: number;
+  ultimaAtualizacao: string;
+  cartas: CardItem[];
 };
 
 type UserCollection = {
@@ -51,12 +96,8 @@ type PhotoFolder = {
 };
 
 type NewCardDraft = {
-  nome: string;
-  numero: string;
-  raridade: Rarity;
-  set: string;
+  codigo: string;
   capturadaEm: string;
-  imageUrl: string;
 };
 
 const AUTH_SESSION_STORAGE_KEY = "estante:authUser:v1";
@@ -104,27 +145,784 @@ const DEFAULT_PHOTO_FOLDERS: PhotoFolder[] = [
 const NAV_ITEMS = [
   { key: "home", label: "Estante" },
   { key: "explorar", label: "Explorar" },
-  { key: "scanner", label: "Scanner" },
   { key: "wishlist", label: "Wishlist" },
-  { key: "perfil", label: "Perfil" },
 ];
 
-const rarityOrder: Record<Rarity, number> = {
-  Comum: 1,
-  Incomum: 2,
-  Rara: 3,
-  "Ultra Rara": 4,
-  Promo: 5,
+const rarityOrder: Record<string, number> = {
+  "Não informada": 0,
+  "Sem raridade": 0,
+
+  Comum: 10,
+  Incomum: 20,
+  Rara: 30,
+
+  "Rara Dupla": 40,
+  "Rara ACE SPEC": 50,
+
+  "Ultra Rara": 60,
+  "Rara Ultra": 60,
+
+  "Ilustração Rara": 70,
+  "Ilustração Rara Especial": 80,
+
+  "Rara Hiper": 90,
+  "Rara Secreta": 90,
+  Dourada: 90,
+
+  Promo: 95,
 };
 
 const emptyDraft: NewCardDraft = {
-  nome: "",
-  numero: "",
-  raridade: "Comum",
-  set: "",
-  capturadaEm: new Date().toISOString().slice(0, 10),
-  imageUrl: "",
+  codigo: "",
+  capturadaEm: "",
 };
+
+function NormalizarTextoHome(valor?: string) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function ConverterRaridadeHome(raridade?: string): Rarity {
+  const r = String(raridade || "").toLowerCase();
+
+  if (r.includes("promo")) return "Promo";
+  if (r.includes("ultra")) return "Ultra Rara";
+  if (r.includes("rare") || r.includes("rara") || r.includes("holo")) return "Rara";
+  if (r.includes("uncommon") || r.includes("incomum")) return "Incomum";
+  if (r.includes("common") || r.includes("comum")) return "Comum";
+
+  return "Comum";
+}
+
+function ObterRankRaridadeHome(raridade?: string) {
+  const r = NormalizarTextoHome(raridade || "");
+
+  if (!r || r.includes("sem raridade") || r.includes("nao informada")) {
+    return 0;
+  }
+
+  if (
+    r.includes("hyper rare") ||
+    r.includes("rara hiper") ||
+    r.includes("hiper") ||
+    r.includes("gold") ||
+    r.includes("dourada") ||
+    r.includes("dourado") ||
+    r.includes("secret rare") ||
+    r.includes("rara secreta") ||
+    r.includes("secreta")
+  ) {
+    return 90;
+  }
+
+  if (
+    r.includes("special illustration rare") ||
+    r.includes("special illustration") ||
+    r.includes("ilustracao rara especial") ||
+    r.includes("ilustracao especial")
+  ) {
+    return 80;
+  }
+
+  if (
+    r.includes("illustration rare") ||
+    r.includes("illustration") ||
+    r.includes("ilustracao rara") ||
+    r.includes("ilustracao")
+  ) {
+    return 70;
+  }
+
+  if (
+    r.includes("ultra rare") ||
+    r.includes("rara ultra") ||
+    r.includes("ultra")
+  ) {
+    return 60;
+  }
+
+  if (
+    r.includes("ace spec") ||
+    r.includes("acespec") ||
+    r.includes("ace")
+  ) {
+    return 50;
+  }
+
+  if (
+    r.includes("double rare") ||
+    r.includes("rara dupla") ||
+    r.includes("dupla")
+  ) {
+    return 40;
+  }
+
+  if (
+    r.includes("rare") ||
+    r.includes("rara") ||
+    r.includes("holo")
+  ) {
+    return 30;
+  }
+
+  if (
+    r.includes("uncommon") ||
+    r.includes("incomum")
+  ) {
+    return 20;
+  }
+
+  if (
+    r.includes("common") ||
+    r.includes("comum")
+  ) {
+    return 10;
+  }
+
+  if (r.includes("promo")) {
+    return 95;
+  }
+
+  return rarityOrder[raridade || ""] || 0;
+}
+
+function ObterImagemAltaHome(imageUrl?: string) {
+  const url = String(imageUrl || "").trim();
+
+  if (!url) return "";
+
+  if (url.includes("/high.png") || url.includes("/high.webp")) {
+    return url;
+  }
+
+  if (url.includes("/low.png")) {
+    return url.replace("/low.png", "/high.png");
+  }
+
+  if (url.includes("/low.webp")) {
+    return url.replace("/low.webp", "/high.webp");
+  }
+
+  if (url.includes("assets.tcgdex.net") && !url.match(/\.(webp|png|jpg|jpeg)$/i)) {
+    return `${url.replace(/\/$/, "")}/high.png`;
+  }
+
+  return url;
+}
+
+function NormalizarImagemSetTcgDex(url?: string) {
+  const cleanUrl = String(url || "").trim();
+
+  if (!cleanUrl) {
+    return "";
+  }
+
+  if (cleanUrl.match(/\.(webp|png|jpg|jpeg)$/i)) {
+    return cleanUrl;
+  }
+
+  return `${cleanUrl.replace(/\/$/, "")}.png`;
+}
+
+function ObterLogoSetHome(carta: any) {
+  return NormalizarImagemSetTcgDex(
+    carta?.setLogoUrl ||
+      carta?.logoUrl ||
+      carta?.logo ||
+      carta?.set?.logo ||
+      carta?.set?.symbol ||
+      "",
+  );
+}
+
+function InferirLogoSetPelaImagemCarta(imageUrl?: string) {
+  const url = String(imageUrl || "").trim();
+
+  if (!url.includes("assets.tcgdex.net")) {
+    return "";
+  }
+
+  // Exemplo:
+  // https://assets.tcgdex.net/pt/me/me04/090/high.png
+  // vira:
+  // https://assets.tcgdex.net/pt/me/me04/logo.png
+  const match = url.match(
+    /^(https:\/\/assets\.tcgdex\.net\/[^/]+\/[^/]+\/[^/]+)\/[^/]+\/(?:high|low)\.(png|webp|jpg|jpeg)$/i,
+  );
+
+  if (!match?.[1]) {
+    return "";
+  }
+
+  return `${match[1]}/logo.png`;
+}
+
+function ResolverLogoSetHome(cartasDoSet: CardItem[]) {
+  const cartaComLogo = cartasDoSet.find((card) => !!card.setLogoUrl);
+
+  if (cartaComLogo?.setLogoUrl) {
+    return NormalizarImagemSetTcgDex(cartaComLogo.setLogoUrl);
+  }
+
+  const cartaComImagemTcgDex = cartasDoSet.find((card) =>
+    String(card.imageUrl || "").includes("assets.tcgdex.net"),
+  );
+
+  return InferirLogoSetPelaImagemCarta(cartaComImagemTcgDex?.imageUrl);
+}
+
+function ObterSetIdPelaImagemHome(imageUrl?: string) {
+  const url = String(imageUrl || "").trim();
+
+  const match = url.match(
+    /assets\.tcgdex\.net\/[^/]+\/[^/]+\/([^/]+)/i,
+  );
+
+  return match?.[1] || "";
+}
+
+function ObterSetIdHome(carta: any) {
+  return String(
+    carta?.setId ||
+      carta?.set?.id ||
+      ObterSetIdPelaImagemHome(carta?.imageUrl) ||
+      "",
+  ).trim();
+}
+
+function ObterChaveSetHome(card: CardItem) {
+  return String(
+    card.setId ||
+      ObterSetIdPelaImagemHome(card.imageUrl) ||
+      card.set ||
+      "sem-set",
+  ).trim();
+}
+
+async function BuscarTotalRealSetHome(card: CardItem) {
+  const setId = String(
+    card.setId ||
+      ObterSetIdPelaImagemHome(card.imageUrl) ||
+      "",
+  ).trim();
+
+  if (!setId) {
+    return 0;
+  }
+
+  try {
+    const cartasDoSet = await BuscarCartasPorColecao(setId);
+
+    return Array.isArray(cartasDoSet) ? cartasDoSet.length : 0;
+  } catch (error) {
+    safeLog("Erro ao buscar total real do set na Home:", {
+      setId,
+      set: card.set,
+      error,
+    });
+
+    return 0;
+  }
+}
+
+function ObterTotalSetCardsHome(carta: any, codigoCard: string) {
+  return (
+    Number(carta?.totalSetCards) ||
+    Number(carta?.set?.cardCount?.total) ||
+    Number(carta?.cardCount?.total) ||
+    Number(carta?.set?.cardCount?.official) ||
+    Number(carta?.cardCount?.official) ||
+    ObterTotalSetPeloCodigo(carta?.codigo || codigoCard)
+  );
+}
+
+function LimparNomePokemonHome(nomeCarta: string) {
+  const nomeOriginal = String(nomeCarta || "").trim();
+
+  if (!nomeOriginal) {
+    return "Desconhecido";
+  }
+
+  const nomeLimpo = nomeOriginal
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/^M\s+/i, "")
+    .replace(/\b(ex|gx|vmax|vstar|v-union|v|mega|break|radiant|radiante)\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return nomeLimpo || nomeOriginal;
+}
+
+function MontarPokemonFavorito(
+  cards: CardItem[],
+  sessionSeed: number,
+): PokemonFavoritoItem | null {
+  if (cards.length === 0) {
+    return null;
+  }
+
+  const mapa = new Map<string, CardItem[]>();
+
+  for (const card of cards) {
+    const nomePokemon = LimparNomePokemonHome(card.nome);
+    const chave = nomePokemon.toLowerCase();
+
+    if (!mapa.has(chave)) {
+      mapa.set(chave, []);
+    }
+
+    mapa.get(chave)!.push(card);
+  }
+
+  const grupos = Array.from(mapa.entries())
+    .map(([_, cartasDoPokemon]) => {
+      const cartasOrdenadas = [...cartasDoPokemon].sort(
+        (a, b) => Date.parse(b.capturadaEm) - Date.parse(a.capturadaEm),
+      );
+
+      const nome = LimparNomePokemonHome(cartasOrdenadas[0]?.nome || "");
+      const totalCartas = cartasDoPokemon.length;
+      const totalSets = new Set(
+        cartasDoPokemon.map((card) => card.set).filter(Boolean),
+      ).size;
+
+      const percentualDaEstante = Math.round((totalCartas / cards.length) * 100);
+
+      const indiceDestaque =
+        cartasOrdenadas.length > 0 ? sessionSeed % cartasOrdenadas.length : 0;
+
+      return {
+        nome,
+        totalCartas,
+        totalNaEstante: cards.length,
+        totalSets,
+        percentualDaEstante,
+        ultimaAtualizacao: cartasOrdenadas[0]?.capturadaEm || "",
+        cartas: cartasOrdenadas,
+        cartaDestaque: cartasOrdenadas[indiceDestaque] || null,
+      };
+    })
+    .sort((a, b) => {
+      if (b.totalCartas !== a.totalCartas) {
+        return b.totalCartas - a.totalCartas;
+      }
+
+      return Date.parse(b.ultimaAtualizacao) - Date.parse(a.ultimaAtualizacao);
+    });
+
+  return grupos[0] || null;
+}
+
+function FormatarDataHome(dataIso?: string) {
+  if (!dataIso) {
+    return "Não informada";
+  }
+
+  const data = new Date(dataIso);
+
+  if (Number.isNaN(data.getTime())) {
+    return "Não informada";
+  }
+
+  return data.toLocaleDateString("pt-BR");
+}
+
+function ObterTotalSetPeloCodigo(numero?: string) {
+  const partes = String(numero || "").split("/");
+
+  if (partes.length < 2) {
+    return 0;
+  }
+
+  const total = Number(partes[1].replace(/\D/g, ""));
+
+  return Number.isNaN(total) ? 0 : total;
+}
+
+function MontarDashboardSets(
+  cards: CardItem[],
+  totaisReaisPorSet: Record<string, number> = {},
+): SetDashboardItem[] {
+  const mapa = new Map<string, CardItem[]>();
+
+  for (const card of cards) {
+    const chave = ObterChaveSetHome(card);
+
+    if (!mapa.has(chave)) {
+      mapa.set(chave, []);
+    }
+
+    mapa.get(chave)!.push(card);
+  }
+
+  return Array.from(mapa.entries())
+    .map(([setKey, cartasDoSet]) => {
+      const primeira = cartasDoSet[0];
+
+      const totalSetCardsApi = Number(totaisReaisPorSet[setKey] || 0);
+
+      const totalSetCardsSalvo = Math.max(
+        ...cartasDoSet.map((card) => Number(card.totalSetCards || 0)),
+        0,
+      );
+
+      const totalSetCardsPeloCodigo = Math.max(
+        ...cartasDoSet.map((card) => ObterTotalSetPeloCodigo(card.numero)),
+        0,
+      );
+
+      const totalSetCards =
+        totalSetCardsApi || totalSetCardsSalvo || totalSetCardsPeloCodigo;
+
+      const cartasUsuario = cartasDoSet.length;
+
+      const percentualCompleto =
+        totalSetCards > 0
+          ? Math.round((cartasUsuario / totalSetCards) * 100)
+          : 0;
+
+      const cartasOrdenadas = [...cartasDoSet].sort(
+        (a, b) => Date.parse(b.capturadaEm) - Date.parse(a.capturadaEm),
+      );
+
+      return {
+        setKey,
+        nome: primeira?.set || "Set sem nome",
+        setId: primeira?.setId || ObterSetIdPelaImagemHome(primeira?.imageUrl),
+        logoUrl: ResolverLogoSetHome(cartasDoSet),
+        cartasUsuario,
+        totalSetCards,
+        percentualCompleto,
+        ultimaAtualizacao: cartasOrdenadas[0]?.capturadaEm || "",
+        cartas: cartasOrdenadas,
+      };
+    })
+    .sort((a, b) => {
+      if (b.cartasUsuario !== a.cartasUsuario) {
+        return b.cartasUsuario - a.cartasUsuario;
+      }
+
+      return b.percentualCompleto - a.percentualCompleto;
+    });
+}
+
+function HomeDashboardCard({
+  pokemon,
+  totalCartas,
+  totalColecoes,
+  totalSets,
+  onPressPokemon,
+}: {
+  pokemon: PokemonFavoritoItem | null;
+  totalCartas: number;
+  totalColecoes: number;
+  totalSets: number;
+  onPressPokemon: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={styles.dashboardCard}
+      activeOpacity={0.9}
+      onPress={onPressPokemon}
+    >
+      <View style={styles.dashboardLeft}>
+        <Text style={styles.dashboardLabel}>Dashboard</Text>
+
+        <Text style={styles.dashboardSmallLabel}>Pokémon favorito</Text>
+
+        <Text style={styles.dashboardPokemonName} numberOfLines={1}>
+          {pokemon?.nome || "Nenhum ainda"}
+        </Text>
+
+        <View style={styles.dashboardStatsGrid}>
+          <View style={styles.dashboardStatBox}>
+            <Text style={styles.dashboardStatNumber}>
+              {pokemon?.totalCartas || 0}
+            </Text>
+            <Text style={styles.dashboardStatLabel}>Cartas de {pokemon?.nome || "Pokémon"}</Text>
+          </View>
+
+          <View style={styles.dashboardStatBox}>
+            <Text style={styles.dashboardStatNumber}>{totalCartas}</Text>
+            <Text style={styles.dashboardStatLabel}>Cartas na estante</Text>
+          </View>
+
+          <View style={styles.dashboardStatBox}>
+            <Text style={styles.dashboardStatNumber}>{totalColecoes}</Text>
+            <Text style={styles.dashboardStatLabel}>Coleções criadas</Text>
+          </View>
+
+          <View style={styles.dashboardStatBox}>
+            <Text style={styles.dashboardStatNumber}>{totalSets}</Text>
+            <Text style={styles.dashboardStatLabel}>Sets</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.dashboardPokemonImageWrap}>
+        {pokemon?.cartaDestaque?.imageUrl ? (
+          <Image
+            source={{ uri: pokemon.cartaDestaque.imageUrl }}
+            style={styles.dashboardPokemonImage}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.dashboardPokemonFallback}>
+            <Text style={styles.dashboardPokemonFallbackText}>?</Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function SetDestaqueCard({
+  setItem,
+  onPressVerMais,
+}: {
+  setItem: SetDashboardItem | null;
+  onPressVerMais: () => void;
+}) {
+  if (!setItem) {
+    return (
+      <View style={styles.featuredSetCard}>
+        <Text style={styles.featuredSetLabel}>Set em destaque</Text>
+        <Text style={styles.featuredSetName}>Nenhum set ainda</Text>
+        <Text style={styles.featuredSetMeta}>
+          Adicione cartas para acompanhar seu progresso.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.featuredSetCard}>
+      <View style={styles.featuredSetHeader}>
+        <View style={styles.featuredSetInfo}>
+          <Text style={styles.featuredSetLabel}>Set em destaque</Text>
+          <Text style={styles.featuredSetName} numberOfLines={1}>
+            {setItem.nome}
+          </Text>
+
+          <Text style={styles.featuredSetMeta}>
+            {setItem.cartasUsuario}/{setItem.totalSetCards || "?"} cartas
+          </Text>
+
+          <Text style={styles.featuredSetDate}>
+            Última atualização: {FormatarDataHome(setItem.ultimaAtualizacao)}
+          </Text>
+        </View>
+
+        <View style={styles.featuredSetLogoBox}>
+          {setItem.logoUrl ? (
+            <Image
+              source={{ uri: setItem.logoUrl }}
+              style={styles.featuredSetLogo}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={styles.featuredSetLogoFallback}>SET</Text>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.featuredSetProgressRow}>
+        <Text style={styles.featuredSetPercent}>
+          {setItem.percentualCompleto}%
+        </Text>
+
+        <View style={styles.featuredSetProgressTrack}>
+          <View
+            style={[
+              styles.featuredSetProgressFill,
+              { width: `${Math.max(5, setItem.percentualCompleto)}%` },
+            ]}
+          />
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.featuredSetButton} onPress={onPressVerMais}>
+        <Text style={styles.featuredSetButtonText}>Ver mais sets</Text>
+        <Text style={styles.featuredSetButtonIcon}>›</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function SetsDashboardModal({
+  visible,
+  sets,
+  onClose,
+  onOpenSet,
+}: {
+  visible: boolean;
+  sets: SetDashboardItem[];
+  onClose: () => void;
+  onOpenSet: (setName: string) => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.setsModalOverlay}>
+        <View style={styles.setsModalCard}>
+          <View style={styles.setsModalHeader}>
+            <View>
+              <Text style={styles.setsModalTitle}>Todos os sets</Text>
+              <Text style={styles.setsModalSubtitle}>
+                {sets.length} set{sets.length === 1 ? "" : "s"} em progresso
+              </Text>
+            </View>
+
+            <TouchableOpacity onPress={onClose} style={styles.setsModalCloseButton}>
+              <Text style={styles.setsModalCloseText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {sets.map((setItem) => (
+              <View key={setItem.setKey} style={styles.setsListCard}>
+                <View style={styles.setsListHeader}>
+                  <View style={styles.setsListInfo}>
+                    <Text style={styles.setsListLabel}>Set</Text>
+
+                    <Text style={styles.setsListName} numberOfLines={1}>
+                      {setItem.nome}
+                    </Text>
+
+                    <Text style={styles.setsListMeta}>
+                      {setItem.cartasUsuario}/{setItem.totalSetCards || "?"} cartas
+                    </Text>
+
+                    <Text style={styles.setsListDate}>
+                      Última atualização: {FormatarDataHome(setItem.ultimaAtualizacao)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.setsListLogoBox}>
+                    {setItem.logoUrl ? (
+                      <Image
+                        source={{ uri: setItem.logoUrl }}
+                        style={styles.setsListLogo}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={styles.setsListLogoFallback}>SET</Text>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.setsListProgressRow}>
+                  <Text style={styles.setsListPercent}>
+                    {setItem.percentualCompleto}%
+                  </Text>
+
+                  <View style={styles.setsListProgressTrack}>
+                    <View
+                      style={[
+                        styles.setsListProgressFill,
+                        {
+                          width: `${Math.max(
+                            5,
+                            Math.min(100, setItem.percentualCompleto),
+                          )}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.setsListButton}
+                  onPress={() => onOpenSet(setItem.nome)}
+                >
+                  <Text style={styles.setsListButtonText}>Ver cartas desse set</Text>
+                  <Text style={styles.setsListButtonIcon}>›</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            {sets.length === 0 && (
+              <Text style={styles.emptyText}>
+                Nenhum set encontrado na sua estante.
+              </Text>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function CollectionTrapezoidCover({
+  images,
+  customCoverUrl,
+}: {
+  images: string[];
+  customCoverUrl?: string;
+}) {
+  if (customCoverUrl) {
+    return (
+      <Image
+        source={{ uri: customCoverUrl }}
+        style={styles.collectionTrapezoidCustomCover}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  const safeImages = images.slice(0, 3);
+
+  while (safeImages.length < 3) {
+    safeImages.push("");
+  }
+
+  return (
+    <View style={styles.collectionTrapezoidWrap}>
+      {safeImages.map((uri, index) => (
+        <View
+          key={`${uri}-${index}`}
+          style={[
+            styles.collectionTrapezoidSlice,
+            index === 0 && styles.collectionTrapezoidLeft,
+            index === 1 && styles.collectionTrapezoidCenter,
+            index === 2 && styles.collectionTrapezoidRight,
+          ]}
+        >
+          {uri ? (
+            <Image
+              source={{ uri }}
+              style={styles.collectionTrapezoidImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.collectionTrapezoidEmpty} />
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function FormatarDataInputHome(dataIso?: string) {
+  if (!dataIso) {
+    return "";
+  }
+
+  const [ano, mes, dia] = dataIso.split("-");
+
+  if (!ano || !mes || !dia) {
+    return dataIso;
+  }
+
+  return `${dia}/${mes}/${ano}`;
+}
 
 export default function HomeScreen() {
   const { nome } = useLocalSearchParams<{ nome: string }>();
@@ -153,6 +951,11 @@ export default function HomeScreen() {
 
   const [isAddCardModalOpen, setIsAddCardModalOpen] = useState(false);
   const [newCardDraft, setNewCardDraft] = useState<NewCardDraft>(emptyDraft);
+  const [buscandoCarta, setBuscandoCarta] = useState(false);
+  const [salvandoCarta, setSalvandoCarta] = useState(false);
+  const [mensagemAddCard, setMensagemAddCard] = useState("");
+  const [cartaEncontrada, setCartaEncontrada] = useState<Card | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [folderSearch, setFolderSearch] = useState('');
   const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
@@ -175,6 +978,13 @@ export default function HomeScreen() {
   } | null>(null);
   const [photoRenameValue, setPhotoRenameValue] = useState("");
   const [selectedCard, setSelectedCard] = useState<CardItem | null>(null);
+
+  const [favoriteSessionSeed, setFavoriteSessionSeed] = useState(Date.now());
+  const [isSetsModalOpen, setIsSetsModalOpen] = useState(false);
+
+  const [totaisReaisPorSet, setTotaisReaisPorSet] = useState<
+  Record<string, number>
+>({});
 
   useEffect(() => {
     const validateSession = async () => {
@@ -206,6 +1016,65 @@ export default function HomeScreen() {
 
     validateSession();
   }, [nome, router]);
+
+  useEffect(() => {
+  let cancelado = false;
+
+  const carregarTotaisReaisDosSets = async () => {
+    if (cards.length === 0) {
+      setTotaisReaisPorSet({});
+      return;
+    }
+
+    const grupos = new Map<string, CardItem[]>();
+
+    for (const card of cards) {
+      const chave = ObterChaveSetHome(card);
+
+      if (!grupos.has(chave)) {
+        grupos.set(chave, []);
+      }
+
+      grupos.get(chave)!.push(card);
+    }
+
+    const proximosTotais: Record<string, number> = {};
+
+    for (const [setKey, cartasDoSet] of grupos.entries()) {
+      const primeiraCarta = cartasDoSet[0];
+
+      if (!primeiraCarta) {
+        continue;
+      }
+
+      const totalReal = await BuscarTotalRealSetHome(primeiraCarta);
+
+      if (totalReal > 0) {
+        proximosTotais[setKey] = totalReal;
+        continue;
+      }
+
+      const totalSalvo = Math.max(
+        ...cartasDoSet.map((card) => Number(card.totalSetCards || 0)),
+        0,
+      );
+
+      if (totalSalvo > 0) {
+        proximosTotais[setKey] = totalSalvo;
+      }
+    }
+
+    if (!cancelado) {
+      setTotaisReaisPorSet(proximosTotais);
+    }
+  };
+
+  void carregarTotaisReaisDosSets();
+
+  return () => {
+    cancelado = true;
+  };
+}, [cards]);
 
   useEffect(() => {
     const loadUserState = async () => {
@@ -241,6 +1110,7 @@ export default function HomeScreen() {
 
         const userId = String(usuario.id);
         setAuthUserId(userId);
+        setFavoriteSessionSeed(Date.now());
 
         const [cardsRes, collectionsRes, linksRes, foldersRes, photosRes] =
           await Promise.all([
@@ -376,6 +1246,8 @@ export default function HomeScreen() {
     ];
   }, [cards]);
 
+
+  
   const filteredCards = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -415,6 +1287,16 @@ export default function HomeScreen() {
       .sort((a, b) => b.capturadaEm.localeCompare(a.capturadaEm))
       .slice(0, 8);
   }, [cards]);
+
+  const pokemonFavorito = useMemo(() => {
+  return MontarPokemonFavorito(cards, favoriteSessionSeed);
+}, [cards, favoriteSessionSeed]);
+
+const dashboardSets = useMemo(() => {
+  return MontarDashboardSets(cards, totaisReaisPorSet);
+}, [cards, totaisReaisPorSet]);
+
+const setDestaque = dashboardSets[0] || null;
 
   const sectionsBySet = useMemo(() => {
     return uniqueSets
@@ -505,107 +1387,202 @@ export default function HomeScreen() {
     return result.assets[0].uri;
   };
 
-  const handlePickNewCardImage = () => {
-    Alert.alert(
-      "Imagem da carta",
-      "Escolha como deseja adicionar a imagem da carta.",
-      [
-        {
-          text: "Galeria",
-          onPress: async () => {
-            const uri = await pickImageFromGallery();
-            if (uri) {
-              setNewCardDraft((prev) => ({ ...prev, imageUrl: uri }));
-            }
-          },
-        },
-        {
-          text: "Camera",
-          onPress: async () => {
-            const uri = await pickImageFromCamera();
-            if (uri) {
-              setNewCardDraft((prev) => ({ ...prev, imageUrl: uri }));
-            }
-          },
-        },
-        { text: "Cancelar", style: "cancel" },
-      ],
-    );
+  const handleSelecionarDataCaptura = (_event: any, selectedDate?: Date) => {
+  setShowDatePicker(false);
+
+  if (!selectedDate) {
+    return;
+  }
+
+  const dataFormatada = selectedDate.toISOString().slice(0, 10);
+
+  setNewCardDraft((prev) => ({
+    ...prev,
+    capturadaEm: dataFormatada,
+  }));
+};
+
+  const handleDateInputChange = (e: any) => {
+    const value = e?.target?.value;
+    if (!value) return;
+    setNewCardDraft((prev) => ({ ...prev, capturadaEm: value }));
+    setShowDatePicker(false);
   };
-
   const handleSaveCard = async () => {
-    const nomeCard = newCardDraft.nome.trim();
-    const codigoCard = newCardDraft.numero.trim();
-    const setCard = newCardDraft.set.trim();
-    const capturadaEmDate = newCardDraft.capturadaEm.trim();
+  if (salvandoCarta || buscandoCarta) {
+    return;
+  }
 
-    if (
-      !newCardDraft.imageUrl ||
-      !nomeCard ||
-      !codigoCard ||
-      !setCard ||
-      !capturadaEmDate
-    ) {
-      Alert.alert(
-        "Campos obrigatorios",
-        "Preencha imagem, nome, codigo, colecao e capturada em.",
-      );
-      return;
-    }
+  setMensagemAddCard("");
 
-    const parsedDate = new Date(`${capturadaEmDate}T12:00:00`);
-    if (Number.isNaN(parsedDate.getTime())) {
-      Alert.alert("Data inválida", "Use o formato AAAA-MM-DD.");
-      return;
-    }
+  const codigoCard = newCardDraft.codigo.trim();
+  const capturadaEmDate = newCardDraft.capturadaEm.trim();
 
-    const cardExists = cards.some(
-      (card) => card.numero.toLowerCase() === codigoCard.toLowerCase(),
+  if (!codigoCard || !capturadaEmDate) {
+    Alert.alert(
+      "Campos obrigatórios",
+      "Informe o código da carta e a data de captura.",
     );
-    if (cardExists) {
-      Alert.alert("Codigo duplicado", "Ja existe uma carta com esse codigo.");
+    return;
+  }
+
+  const parsedDate = new Date(`${capturadaEmDate}T12:00:00`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    Alert.alert("Data inválida", "Use o formato AAAA-MM-DD.");
+    return;
+  }
+
+  if (!authUserId) {
+    Alert.alert("Erro", "Usuário não identificado para salvar carta.");
+    return;
+  }
+
+  setSalvandoCarta(true);
+  setMensagemAddCard("Salvando carta...");
+
+  try {
+    const carta = cartaEncontrada || (await handleBuscarCartaPorCodigo());
+
+    if (!carta) {
+      setMensagemAddCard("Busque uma carta válida antes de salvar.");
       return;
     }
+
+    const catalogCardId = String(carta.id || "").trim();
+    const numeroCarta = String(carta.codigo || codigoCard).trim();
+
+    const cardExists = cards.some((card) => {
+      const mesmoCatalogo =
+        String(card.catalogCardId || card.cardId || "") === catalogCardId;
+      const mesmoNumero =
+        String(card.numero || "").toLowerCase() === numeroCarta.toLowerCase();
+
+      return mesmoCatalogo || mesmoNumero;
+    });
+
+    if (cardExists) {
+      Alert.alert("Carta duplicada", "Essa carta já existe na sua estante.");
+      setMensagemAddCard("Essa carta já existe na sua estante.");
+      return;
+    }
+
+    const totalSetCards = ObterTotalSetCardsHome(carta, codigoCard);
+
+    const raridadeFinal = ConverterRaridadeHome(
+      carta.raridade || (carta as any).rarity || "",
+    );
+
+    const safeCatalogId = catalogCardId || numeroCarta || String(Date.now());
+    const idCartaNaEstante = `card-${authUserId}-${safeCatalogId}`
+      .replace(/[^a-zA-Z0-9_-]/g, "-")
+      .replace(/-+/g, "-");
 
     const newCard: CardItem = {
-      id: "card-" + Date.now(),
-      nome: nomeCard,
-      numero: codigoCard,
-      set: setCard,
-      raridade: newCardDraft.raridade,
-      imageUrl: newCardDraft.imageUrl,
+      id: idCartaNaEstante,
+      cardId: safeCatalogId,
+      catalogCardId: safeCatalogId,
+      nome: carta.nome || "Carta sem nome",
+      numero: numeroCarta,
+      set: carta.colecao || (carta as any).set?.name || "Sem coleção",
+      raridade: raridadeFinal,
+      raridadeRank:
+        Number((carta as any).raridadeRank || (carta as any).rarityRank || 0) ||
+        ObterRankRaridadeHome(raridadeFinal),
+      imageUrl: ObterImagemAltaHome(carta.imageUrl),
       capturadaEm: parsedDate.toISOString(),
+
+      setId: ObterSetIdHome(carta),
+      setLogoUrl: ObterLogoSetHome(carta),
+      totalSetCards,
+
+      pokemon: (carta as any).pokemon || carta.nome || "N/A",
+      tipo: (carta as any).tipo || "",
+      categoria: (carta as any).categoria || "",
+      artista: (carta as any).artista || "",
+      serie: (carta as any).serie || "",
     };
 
-    if (!authUserId) {
-      Alert.alert("Erro", "Usuario nao identificado para salvar carta.");
-      return;
-    }
+    const resposta = await fetch(`${BASE_URL}/cards`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...newCard,
+        userId: authUserId,
+      }),
+    });
 
-    try {
-      const resposta = await fetch(`${BASE_URL}/cards`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...newCard,
-          userId: authUserId,
-        }),
+    const textoResposta = await resposta.text().catch(() => "");
+
+    if (!resposta.ok) {
+      safeLog("Erro ao salvar carta na API:", {
+        status: resposta.status,
+        body: textoResposta,
       });
-
-      if (!resposta.ok) {
-        throw new Error("Falha ao salvar carta");
-      }
-    } catch {
-      Alert.alert("Erro", "Nao foi possivel salvar a carta.");
-      return;
+      throw new Error(
+        textoResposta || `Falha ao salvar carta. Status ${resposta.status}`,
+      );
     }
 
-    setCards((prev) => [newCard, ...prev]);
+    const savedCard = textoResposta
+      ? ({ ...newCard, ...JSON.parse(textoResposta) } as CardItem)
+      : newCard;
+
+    setCards((prev) => [savedCard, ...prev]);
     setIsAddCardModalOpen(false);
     setNewCardDraft(emptyDraft);
-  };
+    setCartaEncontrada(null);
+    setShowDatePicker(false);
+    setMensagemAddCard("");
+    Alert.alert("Sucesso", "Carta salva na estante.");
+  } catch (error) {
+    safeLog("Erro ao salvar carta:", error);
+    setMensagemAddCard("Não foi possível salvar a carta. Confira se o json-server está rodando e se a carta já não existe.");
+    Alert.alert("Erro", "Não foi possível salvar a carta.");
+  } finally {
+    setSalvandoCarta(false);
+  }
+};
+
+  const handleBuscarCartaPorCodigo = async () => {
+  const codigoCard = newCardDraft.codigo.trim();
+
+  if (!codigoCard) {
+    Alert.alert("Código obrigatório", "Digite o código da carta para buscar.");
+    return null;
+  }
+
+  setMensagemAddCard("");
+  setBuscandoCarta(true);
+  setCartaEncontrada(null);
+
+  try {
+    const resultados = await BuscarCartaPorCodigo(codigoCard);
+
+    if (resultados.length === 0) {
+      Alert.alert(
+        "Carta não encontrada",
+        "Não encontrei nenhuma carta com esse código. Tente usar o formato 002/131 ou o ID da carta.",
+      );
+      return null;
+    }
+
+    const primeiraCarta = resultados[0];
+    const detalhe = await BuscarDetalheCartaTcgDex(primeiraCarta);
+
+    setCartaEncontrada(detalhe);
+
+    return detalhe;
+  } catch (error) {
+    safeLog("Erro ao buscar carta:", error);
+    Alert.alert("Erro", "Não foi possível buscar a carta pelo código.");
+    return null;
+  } finally {
+    setBuscandoCarta(false);
+  }
+};
 
   const handleDeleteCollection = async (collectionId: string) => {
     if (!authUserId) {
@@ -1162,6 +2139,19 @@ export default function HomeScreen() {
   };
 
   const confirmDeleteCard = (card: CardItem) => {
+    if (Platform.OS === "web") {
+      const confirmou =
+        typeof window === "undefined"
+          ? true
+          : window.confirm(`Deseja excluir "${card.nome}" da estante?`);
+
+      if (confirmou) {
+        void handleDeleteCard(card.id);
+      }
+
+      return;
+    }
+
     Alert.alert("Excluir carta", `Deseja excluir "${card.nome}" da estante?`, [
       { text: "Cancelar", style: "cancel" },
       {
@@ -1302,12 +2292,6 @@ export default function HomeScreen() {
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={handleLogout}>
   <Text style={styles.logoutButtonText}>Sair</Text>
-</TouchableOpacity>
-            <TouchableOpacity
-              style={styles.avatarButton}
-              onPress={() => Alert.alert('Em breve', 'Perfil sera implementado em breve.')}
-            >
-              <Text style={styles.avatarIcon}>PERFIL</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1343,356 +2327,145 @@ export default function HomeScreen() {
           />
         </View>
 
-        {mode !== "padrao" && (
-          <View style={styles.toolsRow}>
-            <TouchableOpacity
-              style={[
-                styles.toolChip,
-                sortMode === "recentes" && styles.toolChipActive,
-              ]}
-              onPress={() => setSortMode("recentes")}
-            >
-              <Text
-                style={[
-                  styles.toolChipText,
-                  sortMode === "recentes" && styles.toolChipTextActive,
-                ]}
-              >
-                Mais recentes
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toolChip,
-                sortMode === "nome" && styles.toolChipActive,
-              ]}
-              onPress={() => setSortMode("nome")}
-            >
-              <Text
-                style={[
-                  styles.toolChipText,
-                  sortMode === "nome" && styles.toolChipTextActive,
-                ]}
-              >
-                Nome
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toolChip,
-                sortMode === "set" && styles.toolChipActive,
-              ]}
-              onPress={() => setSortMode("set")}
-            >
-              <Text
-                style={[
-                  styles.toolChipText,
-                  sortMode === "set" && styles.toolChipTextActive,
-                ]}
-              >
-                Set
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {mode !== "padrao" && (
-          <View style={styles.toolsRow}>
-            <RarityChip
-              label="Todas"
-              isActive={rarityFilter === "Todas"}
-              onPress={() => setRarityFilter("Todas")}
-            />
-            <RarityChip
-              label="Rara"
-              isActive={rarityFilter === "Rara"}
-              onPress={() => setRarityFilter("Rara")}
-            />
-            <RarityChip
-              label="Ultra Rara"
-              isActive={rarityFilter === "Ultra Rara"}
-              onPress={() => setRarityFilter("Ultra Rara")}
-            />
-            <RarityChip
-              label="Promo"
-              isActive={rarityFilter === "Promo"}
-              onPress={() => setRarityFilter("Promo")}
-            />
-          </View>
-        )}
-
-        {mode === "set" && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.setRow}
-          >
-            {uniqueSets.map((setName) => (
-              <TouchableOpacity
-                key={setName}
-                style={[
-                  styles.setChip,
-                  selectedSet === setName && styles.setChipActive,
-                ]}
-                onPress={() => setSelectedSet(setName)}
-              >
-                <Text
-                  style={[
-                    styles.setChipText,
-                    selectedSet === setName && styles.setChipTextActive,
-                  ]}
-                >
-                  {setName}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
         {mode === "padrao" && (
-          <>
-            <SectionTitle
-              title="Cartas recentes"
-              subtitle={`${cardsRecentes.length} adicionadas recentemente`}
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalList}
+  <>
+    <HomeDashboardCard
+      pokemon={pokemonFavorito}
+      totalCartas={cards.length}
+      totalColecoes={collections.length}
+      totalSets={dashboardSets.length}
+      onPressPokemon={() => {
+        if (!pokemonFavorito) {
+          return;
+        }
+
+        setMode("todas");
+        setQuery(pokemonFavorito.nome);
+        setSelectedSet("Todos");
+        setRarityFilter("Todas");
+      }}
+    />
+
+    <SetDestaqueCard
+  setItem={setDestaque}
+  onPressVerMais={() => setIsSetsModalOpen(true)}
+/>
+
+    <View style={styles.sectionHeaderRow}>
+      <View>
+        <Text style={styles.sectionTitle}>Minhas coleções</Text>
+        <Text style={styles.sectionSubtitle}>
+          {`${collections.length} coleções criadas`}
+        </Text>
+      </View>
+
+      <TouchableOpacity onPress={() => setIsCreateCollectionModalOpen(true)}>
+        <Text style={styles.sectionAction}>Nova</Text>
+      </TouchableOpacity>
+    </View>
+
+    <View style={styles.collectionSearchRow}>
+      <View style={styles.collectionSearchBox}>
+        <TextInput
+          value={collectionSearch}
+          onChangeText={setCollectionSearch}
+          placeholder="Pesquisar coleção existente"
+          placeholderTextColor="#9A8E80"
+          style={styles.collectionSearchInput}
+        />
+        <Text style={styles.collectionSearchIcon}>⌕</Text>
+      </View>
+    </View>
+
+    <View style={styles.collectionsGrid}>
+      <TouchableOpacity
+        style={styles.addCollectionCard}
+        onPress={() => setIsCreateCollectionModalOpen(true)}
+        activeOpacity={0.9}
+      >
+        <Text style={styles.addCollectionPlus}>+</Text>
+        <Text style={styles.addCollectionLabel}>Nova coleção</Text>
+      </TouchableOpacity>
+
+      {filteredCollections.map((collection) => {
+        const thumbs = getCollectionThumbs(collection);
+
+        return (
+          <TouchableOpacity
+            key={collection.id}
+            style={styles.collectionCard}
+            onPress={() => setSelectedCollectionId(collection.id)}
+          >
+            <TouchableOpacity
+              style={styles.collectionDeleteButton}
+              onPress={() =>
+                handleConfirmDeleteCollection(collection.id, collection.nome)
+              }
             >
-              <TouchableOpacity
-                style={[styles.cardTile, styles.cardTileCompact, styles.addRecentCardTile]}
-                onPress={() => setIsAddCardModalOpen(true)}
-                activeOpacity={0.9}
-              >
-                <View style={styles.addRecentCardInner}>
-                  <Text style={styles.addRecentCardPlus}>+</Text>
-                  <Text style={styles.addRecentCardLabel}>Adicionar carta</Text>
-                </View>
-              </TouchableOpacity>
-              {cardsRecentes.map((card) => (
-                <CardTile
-                  key={card.id}
-                  card={card}
-                  compact
-                  onPress={() => setSelectedCard(card)}
-                />
-              ))}
-            </ScrollView>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Minhas coleções</Text>
-              <Text style={styles.sectionSubtitle}>
-                {`${collections.length} coleções criadas`}
-              </Text>
-            </View>
-            {filteredCollections.length === 0 && (
-              <Text style={styles.emptyText}>
-                {collectionSearch.trim()
-                  ? "Nenhuma coleção encontrada para essa busca."
-                  : "Toque no + para criar sua primeira coleção."}
-              </Text>
-            )}
-            <View style={styles.collectionSearchRow}>
-  <View style={styles.collectionSearchBox}>
-    <TextInput
-      value={collectionSearch}
-      onChangeText={setCollectionSearch}
-      placeholder="Pesquisar coleção existente"
-      placeholderTextColor="#9A8E80"
-      style={styles.collectionSearchInput}
-    />
-    <Text style={styles.collectionSearchIcon}>⌕</Text>
-  </View>
-</View>
+              <Text style={styles.collectionDeleteButtonText}>X</Text>
+            </TouchableOpacity>
 
-            <View style={styles.collectionsGrid}>
-              <TouchableOpacity
-                style={styles.addCollectionCard}
-                onPress={() => setIsCreateCollectionModalOpen(true)}
-                activeOpacity={0.9}
-              >
-                <Text style={styles.addCollectionPlus}>+</Text>
-                <Text style={styles.addCollectionLabel}>Nova coleção</Text>
-              </TouchableOpacity>
-              {filteredCollections.map((collection) => {
-                const thumbs = getCollectionThumbs(collection);
-                const hasCustomCover = !!collection.coverImageUrl;
-                return (
-                  <TouchableOpacity
-                    key={collection.id}
-                    style={styles.collectionCard}
-                    onPress={() => setSelectedCollectionId(collection.id)}
-                  >
-                    <TouchableOpacity
-                      style={styles.collectionDeleteButton}
-                      onPress={() => handleConfirmDeleteCollection(collection.id, collection.nome)}
-                    >
-                      <Text style={styles.collectionDeleteButtonText}>X</Text>
-                    </TouchableOpacity>
-                    <View style={styles.collectionThumbWrap}>
-                      {hasCustomCover ? (
-                        <Image
-                          source={{ uri: collection.coverImageUrl }}
-                          style={styles.collectionThumbImage}
-                        />
-                      ) : thumbs.length > 0 ? (
-                        <View style={styles.collectionThumbCollage}>
-                          {thumbs.map((thumb, index) => (
-                            <View
-                              key={`${collection.id}-thumb-${index}`}
-                              style={[
-                                styles.collectionThumbSlice,
-                                thumbs.length === 1 &&
-                                  styles.collectionThumbSliceSingle,
-                                thumbs.length === 2 &&
-                                  styles.collectionThumbSliceDouble,
-                                index === thumbs.length - 1 &&
-                                  styles.collectionThumbSliceLast,
-                              ]}
-                            >
-                              <Image
-                                source={{ uri: thumb }}
-                                style={styles.collectionThumbSliceImage}
-                              />
-                            </View>
-                          ))}
-                        </View>
-                      ) : (
-                        <View style={styles.collectionThumbPlaceholder}>
-                          <Text style={styles.collectionThumbPlaceholderText}>
-                            Sem capa
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.collectionName} numberOfLines={1}>
-                      {collection.nome}
-                    </Text>
-                    <Text style={styles.collectionMeta}>
-                      {collection.cardIds.length} cartas
-                    </Text>
-                    <Text style={styles.collectionBadge}>Toque para abrir</Text>
-                  </TouchableOpacity>
-                );
-              })}
-              {collections.length === 0 && (
-                <Text style={styles.emptyText}>
-                  Crie sua primeira coleção acima.
-                </Text>
-              )}
-            </View>
-
-            <SectionTitle
-              title="Minhas fotos"
-              subtitle={`${photoFolders.length} pastas de fotos`}
+            <CollectionTrapezoidCover
+              customCoverUrl={collection.coverImageUrl}
+              images={thumbs}
             />
-            <View style={styles.folderSearchRow}>
-  <View style={styles.folderSearchBox}>
-    <TextInput
-      value={folderSearch}
-      onChangeText={setFolderSearch}
-      placeholder="Pesquisar pasta existente"
-      placeholderTextColor="#9A8E80"
-      style={styles.folderSearchInput}
+
+            <Text style={styles.collectionName} numberOfLines={1}>
+              {collection.nome}
+            </Text>
+
+            <Text style={styles.collectionMeta}>
+              {collection.cardIds.length} cartas
+            </Text>
+
+            <Text style={styles.collectionBadge}>Toque para abrir</Text>
+          </TouchableOpacity>
+        );
+      })}
+
+      {collections.length === 0 && (
+        <Text style={styles.emptyText}>
+          Crie sua primeira coleção acima.
+        </Text>
+      )}
+    </View>
+
+    <SectionTitle
+      title="Cartas recentes"
+      subtitle={`${cardsRecentes.length} adicionadas recentemente`}
     />
-    <Text style={styles.searchIcon}>⌕</Text>
-  </View>
 
-  <TouchableOpacity
-    style={styles.folderAddButton}
-    onPress={() => setIsCreateFolderModalOpen(true)}
-  >
-    <Text style={styles.folderAddButtonText}>+</Text>
-  </TouchableOpacity>
-</View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.horizontalList}
+    >
+      <TouchableOpacity
+        style={[
+          styles.cardTile,
+          styles.cardTileCompact,
+          styles.addRecentCardTile,
+        ]}
+        onPress={() => setIsAddCardModalOpen(true)}
+        activeOpacity={0.9}
+      >
+        <View style={styles.addRecentCardInner}>
+          <Text style={styles.addRecentCardPlus}>+</Text>
+          <Text style={styles.addRecentCardLabel}>Adicionar carta</Text>
+        </View>
+      </TouchableOpacity>
 
-            <View style={styles.photoFolderList}>
-              {filteredPhotoFolders.map((folder) => (
-                <View key={folder.id} style={styles.photoFolderCard}>
-                  <TouchableOpacity
-                    style={styles.folderDeleteButton}
-                    onPress={() => handleConfirmDeletePhotoFolder(folder.id, folder.nome)}
-                  >
-                    <Text style={styles.folderDeleteButtonText}>Excluir pasta</Text>
-                  </TouchableOpacity>
-                  <View style={styles.photoFolderHeader}>
-                    <View>
-                      <Text style={styles.photoFolderName}>{folder.nome}</Text>
-                      <Text style={styles.photoFolderMeta}>
-                        {folder.fotos.length} fotos
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.photoAddRow}>
-                    <TouchableOpacity
-                      style={styles.addPhotoButton}
-                      onPress={() => handleAddPhoto(folder.id)}
-                    >
-                      <Text style={styles.addPhotoButtonText}>+ Foto</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {folder.fotos.length === 0 ? (
-                    <Text style={styles.photoFolderEmpty}>
-                      Sem fotos ainda.
-                    </Text>
-                  ) : (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.photoPreviewRow}
-                    >
-                      {folder.fotos.slice(0, 6).map((foto) => (
-                        <View key={foto.id} style={styles.photoPreviewCard}>
-                          <TouchableOpacity
-                            style={styles.photoPreviewPressable}
-                            onPress={() =>
-                              setPhotoPreview({
-                                folderId: folder.id,
-                                photo: foto,
-                              })
-                            }
-                          >
-                            <Image
-                              source={{ uri: foto.imageUrl }}
-                              style={styles.photoPreviewImage}
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={styles.photoDeleteButton}
-                            onPress={() =>
-                              confirmDeletePhoto(
-                                folder.id,
-                                foto.id,
-                                foto.titulo,
-                              )
-                            }
-                          >
-                            <Text style={styles.photoDeleteButtonText}>X</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() =>
-                              openRenamePhoto(folder.id, foto.id, foto.titulo)
-                            }
-                            activeOpacity={0.8}
-                          >
-                            <Text
-                              style={styles.photoPreviewTitle}
-                              numberOfLines={1}
-                            >
-                              {foto.titulo}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+      {cardsRecentes.map((card) => (
+        <CardTile
+          key={card.id}
+          card={card}
+          compact
+          onPress={() => setSelectedCard(card)}
+        />
+      ))}
+    </ScrollView>
+  </>
+)}
 
         {mode === "todas" && (
           <>
@@ -1764,118 +2537,176 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      <Modal
-        visible={isAddCardModalOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsAddCardModalOpen(false)}
+     <Modal
+  visible={isAddCardModalOpen}
+  transparent
+  animationType="fade"
+  onRequestClose={() => {
+    setIsAddCardModalOpen(false);
+    setNewCardDraft(emptyDraft);
+    setCartaEncontrada(null);
+  }}
+>
+  <View style={styles.photoModalOverlay}>
+    <View style={styles.photoRenameCard}>
+      <Text style={styles.photoRenameTitle}>
+        Adicionar carta à estante
+      </Text>
+
+      <TextInput
+        value={newCardDraft.codigo}
+        onChangeText={(value) => {
+          setNewCardDraft((prev) => ({ ...prev, codigo: value }));
+          setCartaEncontrada(null);
+        }}
+        placeholder="Código da carta. Ex: 002/131"
+        placeholderTextColor="#9A8E80"
+        style={styles.photoRenameInput}
+        autoCapitalize="none"
+      />
+
+      <TouchableOpacity
+        style={styles.pickImageButton}
+        onPress={() => void handleBuscarCartaPorCodigo()}
+        disabled={buscandoCarta}
       >
-        <View style={styles.photoModalOverlay}>
-          <View style={styles.photoRenameCard}>
-            <Text style={styles.photoRenameTitle}>
-              Adicionar carta manualmente
+        <Text style={styles.pickImageText}>
+          {buscandoCarta ? "Buscando..." : "Buscar carta"}
+        </Text>
+      </TouchableOpacity>
+
+      {cartaEncontrada ? (
+        <View style={styles.cardSearchPreview}>
+          {cartaEncontrada.imageUrl ? (
+            <Image
+              source={{ uri: ObterImagemAltaHome(cartaEncontrada.imageUrl) }}
+              style={styles.cardSearchPreviewImage}
+              resizeMode="contain"
+            />
+          ) : null}
+
+          <View style={styles.cardSearchPreviewInfo}>
+            <Text style={styles.cardSearchPreviewTitle} numberOfLines={2}>
+              {cartaEncontrada.nome || "Carta sem nome"}
             </Text>
 
-            <TouchableOpacity
-              style={styles.pickImageButton}
-              onPress={handlePickNewCardImage}
-            >
-              <Text style={styles.pickImageText}>
-                {newCardDraft.imageUrl
-                  ? "Trocar imagem"
-                  : "Selecionar imagem da carta"}
-              </Text>
-            </TouchableOpacity>
-            {newCardDraft.imageUrl ? (
-              <Image
-                source={{ uri: newCardDraft.imageUrl }}
-                style={styles.newCardPreview}
-              />
-            ) : null}
+            <Text style={styles.cardSearchPreviewText} numberOfLines={1}>
+              {cartaEncontrada.codigo || newCardDraft.codigo}
+            </Text>
 
-            <TextInput
-              value={newCardDraft.nome}
-              onChangeText={(value) =>
-                setNewCardDraft((prev) => ({ ...prev, nome: value }))
-              }
-              placeholder="Nome da carta"
-              placeholderTextColor="#9A8E80"
-              style={styles.photoRenameInput}
-            />
-            <TextInput
-              value={newCardDraft.numero}
-              onChangeText={(value) =>
-                setNewCardDraft((prev) => ({ ...prev, numero: value }))
-              }
-              placeholder="Codigo da carta"
-              placeholderTextColor="#9A8E80"
-              style={styles.photoRenameInput}
-            />
-            <TextInput
-              value={newCardDraft.set}
-              onChangeText={(value) =>
-                setNewCardDraft((prev) => ({ ...prev, set: value }))
-              }
-              placeholder="Nome da colecao (set)"
-              placeholderTextColor="#9A8E80"
-              style={styles.photoRenameInput}
-            />
-            <TextInput
-              value={newCardDraft.capturadaEm}
-              onChangeText={(value) => 
-                setNewCardDraft((prev) => ({ ...prev, capturadaEm: value }))
-              }
-              placeholder="Data de captura (AAAA-MM-DD)"
-              placeholderTextColor="#9A8E80"
-              style={styles.photoRenameInput}
-            />
+            <Text style={styles.cardSearchPreviewText} numberOfLines={1}>
+              {cartaEncontrada.colecao || "Sem coleção"}
+            </Text>
 
-            <View style={styles.raritySelector}>
-              {(["Comum", "Incomum", "Rara", "Ultra Rara", "Promo"] as Rarity[]).map(
-                (rarity) => (
-                  <TouchableOpacity
-                    key={rarity}
-                    style={[
-                      styles.rarityOption,
-                      newCardDraft.raridade === rarity &&
-                        styles.rarityOptionActive,
-                    ]}
-                    onPress={() =>
-                      setNewCardDraft((prev) => ({ ...prev, raridade: rarity }))
-                    }
-                  >
-                    <Text
-                      style={[
-                        styles.rarityOptionText,
-                        newCardDraft.raridade === rarity &&
-                          styles.rarityOptionTextActive,
-                      ]}
-                    >
-                      {rarity}
-                    </Text>
-                  </TouchableOpacity>
-                ),
-              )}
-            </View>
-
-            <View style={styles.photoModalActions}>
-              <TouchableOpacity
-                style={styles.photoModalCloseButton}
-                onPress={() => setIsAddCardModalOpen(false)}
-              >
-                <Text style={styles.photoModalCloseText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.photoModalRenameButton}
-                onPress={handleSaveCard}
-              >
-                <Text style={styles.photoModalRenameText}>Salvar carta</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.cardSearchPreviewText} numberOfLines={1}>
+              {cartaEncontrada.raridade || "Sem raridade"}
+            </Text>
           </View>
         </View>
-      </Modal>
+      ) : null}
 
+      {Platform.OS === "web" ? (
+        <View style={styles.datePickerWebWrap}>
+          <Text style={styles.datePickerWebLabel}>Data de captura</Text>
+
+          {React.createElement("input", {
+            type: "date",
+            "data-testid": "input-data-captura",
+            "aria-label": "Data de captura",
+            value: newCardDraft.capturadaEm,
+            onChange: handleDateInputChange,
+            style: {
+              width: "100%",
+              minHeight: 44,
+              borderRadius: 10,
+              border: "1px solid #745437",
+              backgroundColor: "rgba(20, 14, 9, 0.85)",
+              color: "#EFE7DB",
+              padding: "0 10px",
+              fontSize: 13,
+              fontWeight: 700,
+              outline: "none",
+              boxSizing: "border-box",
+              marginBottom: 8,
+            },
+          })}
+        </View>
+      ) : (
+        <>
+          <TouchableOpacity
+            style={styles.datePickerButton}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.datePickerButtonText,
+                !newCardDraft.capturadaEm && styles.datePickerPlaceholderText,
+              ]}
+            >
+              {newCardDraft.capturadaEm
+                ? FormatarDataInputHome(newCardDraft.capturadaEm)
+                : "Data de captura"}
+            </Text>
+
+            <Text style={styles.datePickerIcon}>📅</Text>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={
+                newCardDraft.capturadaEm
+                  ? new Date(`${newCardDraft.capturadaEm}T12:00:00`)
+                  : new Date()
+              }
+              mode="date"
+              display="default"
+              onChange={handleSelecionarDataCaptura}
+            />
+          )}
+        </>
+      )}
+
+      {mensagemAddCard ? (
+        <Text style={styles.cardFormFeedback}>{mensagemAddCard}</Text>
+      ) : null}
+
+      <View style={styles.photoModalActions}>
+        <TouchableOpacity
+          style={styles.photoModalCloseButton}
+          onPress={() => {
+            setIsAddCardModalOpen(false);
+            setNewCardDraft(emptyDraft);
+            setCartaEncontrada(null);
+          }}
+        >
+          <Text style={styles.photoModalCloseText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.photoModalRenameButton}
+          onPress={handleSaveCard}
+          disabled={buscandoCarta || salvandoCarta}
+        >
+          <Text style={styles.photoModalRenameText}>
+            {salvandoCarta ? "Salvando..." : buscandoCarta ? "Aguarde..." : "Salvar carta"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
+
+<SetsDashboardModal
+  visible={isSetsModalOpen}
+  sets={dashboardSets}
+  onClose={() => setIsSetsModalOpen(false)}
+  onOpenSet={(setName) => {
+    setIsSetsModalOpen(false);
+    setMode("set");
+    setSelectedSet(setName);
+  }}
+/>
       <Modal
         animationType="fade"
         transparent
@@ -2258,6 +3089,14 @@ export default function HomeScreen() {
               style={[styles.navItem, active && styles.navItemActive]}
               onPress={() => {
                 if (!active) {
+                  if (item.key === "explorar") {
+                    router.push('/explore');
+                    return;
+                  }
+                  if (item.key === "wishlist") {
+                    router.push('/wishlist');
+                    return;
+                  }
                   Alert.alert(
                     "Em breve",
                     `${item.label} sera implementado em breve.`,
@@ -2320,6 +3159,82 @@ function RarityChip({ label, isActive, onPress }: ChipProps) {
       >
         {label}
       </Text>
+    </TouchableOpacity>
+  );
+}
+
+function PokemonFavoritoCard({
+  pokemon,
+  onPress,
+}: {
+  pokemon: PokemonFavoritoItem | null;
+  onPress: () => void;
+}) {
+  if (!pokemon) {
+    return (
+      <View style={styles.favoritePokemonCard}>
+        <View>
+          <Text style={styles.favoritePokemonLabel}>Pokémon favorito</Text>
+          <Text style={styles.favoritePokemonName}>Nenhuma carta ainda</Text>
+          <Text style={styles.favoritePokemonSub}>
+            Adicione cartas para descobrir seu favorito.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const imagens = pokemon.cartas.slice(0, 3);
+
+  return (
+    <TouchableOpacity
+      style={styles.favoritePokemonCard}
+      activeOpacity={0.9}
+      onPress={onPress}
+    >
+      <View style={styles.favoritePokemonInfo}>
+        <Text style={styles.favoritePokemonLabel}>Pokémon favorito</Text>
+
+        <Text style={styles.favoritePokemonName} numberOfLines={1}>
+          {pokemon.nome}
+        </Text>
+
+        <Text style={styles.favoritePokemonSub}>
+          {pokemon.totalCartas} cartas de {pokemon.totalNaEstante} na estante
+        </Text>
+
+        <Text style={styles.favoritePokemonSub}>
+          Presente em {pokemon.totalSets} set{pokemon.totalSets === 1 ? "" : "s"}
+        </Text>
+
+        <Text style={styles.favoritePokemonUpdate}>
+          Última atualização: {FormatarDataHome(pokemon.ultimaAtualizacao)}
+        </Text>
+      </View>
+
+      <View style={styles.favoritePokemonRight}>
+        <View style={styles.favoritePokemonPercentBadge}>
+          <Text style={styles.favoritePokemonPercentText}>
+            {pokemon.percentualDaEstante}%
+          </Text>
+        </View>
+
+        <View style={styles.favoritePokemonImagesWrap}>
+          {imagens.map((card, index) => (
+            <Image
+              key={`${card.id}-${index}`}
+              source={{ uri: card.imageUrl }}
+              style={[
+                styles.favoritePokemonImage,
+                index === 0 && styles.favoritePokemonImageLeft,
+                index === 1 && styles.favoritePokemonImageCenter,
+                index === 2 && styles.favoritePokemonImageRight,
+              ]}
+              resizeMode="cover"
+            />
+          ))}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -2419,6 +3334,555 @@ function CardTile({
 }
 
 const styles = StyleSheet.create({
+
+  datePickerWebWrap: {
+  marginBottom: 8,
+},
+
+datePickerWebLabel: {
+  color: "#9A8E80",
+  fontSize: 12,
+  fontWeight: "700",
+  marginBottom: 6,
+},
+
+  sectionHeaderRow: {
+  marginTop: 18,
+  marginBottom: 10,
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "flex-end",
+},
+
+sectionAction: {
+  color: "#E4B56D",
+  fontSize: 13,
+  fontWeight: "900",
+},
+
+dashboardCard: {
+  marginTop: 14,
+  marginBottom: 14,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.32)",
+  backgroundColor: "rgba(18, 13, 9, 0.95)",
+  borderRadius: 22,
+  padding: 14,
+  flexDirection: "row",
+  overflow: "hidden",
+},
+
+dashboardLeft: {
+  flex: 1,
+  paddingRight: 10,
+},
+
+dashboardLabel: {
+  color: "#E4B56D",
+  fontSize: 12,
+  fontWeight: "900",
+  textTransform: "uppercase",
+  letterSpacing: 1,
+},
+
+dashboardSmallLabel: {
+  color: "#B39E82",
+  fontSize: 12,
+  marginTop: 10,
+  fontWeight: "700",
+},
+
+setsModalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0, 0, 0, 0.82)",
+  justifyContent: "flex-end",
+  paddingHorizontal: 12,
+  paddingBottom: 18,
+},
+
+setsModalCard: {
+  maxHeight: "84%",
+  borderRadius: 24,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.28)",
+  backgroundColor: "#100B08",
+  padding: 16,
+},
+
+setsModalHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 14,
+},
+
+setsModalTitle: {
+  color: "#F8F2E8",
+  fontSize: 24,
+  fontWeight: "900",
+},
+
+setsModalSubtitle: {
+  color: "#B39E82",
+  fontSize: 12,
+  marginTop: 3,
+  fontWeight: "700",
+},
+
+setsModalCloseButton: {
+  borderRadius: 999,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.32)",
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  backgroundColor: "rgba(214, 164, 90, 0.12)",
+},
+
+setsModalCloseText: {
+  color: "#F3DFC2",
+  fontSize: 12,
+  fontWeight: "900",
+},
+
+setsListCard: {
+  borderRadius: 18,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.20)",
+  backgroundColor: "rgba(18, 13, 9, 0.96)",
+  padding: 14,
+  marginBottom: 12,
+},
+
+setsListHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+},
+
+setsListInfo: {
+  flex: 1,
+  paddingRight: 12,
+},
+
+datePickerButton: {
+  borderWidth: 1,
+  borderColor: "#745437",
+  backgroundColor: "rgba(20, 14, 9, 0.85)",
+  borderRadius: 10,
+  minHeight: 44,
+  paddingHorizontal: 10,
+  marginBottom: 8,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+},
+
+datePickerButtonText: {
+  color: "#EFE7DB",
+  fontSize: 13,
+  fontWeight: "700",
+},
+
+datePickerPlaceholderText: {
+  color: "#9A8E80",
+  fontWeight: "500",
+},
+
+datePickerIcon: {
+  fontSize: 16,
+  marginLeft: 8,
+},
+
+setsListLabel: {
+  color: "#E4B56D",
+  fontSize: 11,
+  fontWeight: "900",
+  textTransform: "uppercase",
+  letterSpacing: 1,
+},
+
+setsListName: {
+  color: "#F8F2E8",
+  fontSize: 22,
+  fontWeight: "900",
+  marginTop: 4,
+},
+
+setsListMeta: {
+  color: "#D4C0A0",
+  fontSize: 13,
+  fontWeight: "800",
+  marginTop: 6,
+},
+
+setsListDate: {
+  color: "#9F8E78",
+  fontSize: 11,
+  fontWeight: "700",
+  marginTop: 4,
+},
+
+setsListLogoBox: {
+  width: 104,
+  height: 72,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.18)",
+  backgroundColor: "rgba(8, 6, 4, 0.55)",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 8,
+},
+
+setsListLogo: {
+  width: "100%",
+  height: "100%",
+},
+
+setsListLogoFallback: {
+  color: "#E4B56D",
+  fontSize: 14,
+  fontWeight: "900",
+},
+
+setsListProgressRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 14,
+},
+
+setsListPercent: {
+  color: "#F8E9CE",
+  fontSize: 22,
+  fontWeight: "900",
+  width: 64,
+},
+
+setsListProgressTrack: {
+  flex: 1,
+  height: 8,
+  borderRadius: 999,
+  backgroundColor: "#24190D",
+  overflow: "hidden",
+},
+
+setsListProgressFill: {
+  height: "100%",
+  borderRadius: 999,
+  backgroundColor: "#E4B56D",
+},
+
+setsListButton: {
+  marginTop: 14,
+  height: 42,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: "#D6A45A",
+  backgroundColor: "rgba(214, 164, 90, 0.14)",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+setsListButtonText: {
+  color: "#F3DFC2",
+  fontSize: 13,
+  fontWeight: "900",
+},
+
+setsListButtonIcon: {
+  color: "#E4B56D",
+  fontSize: 24,
+  marginLeft: 8,
+  marginTop: -2,
+},
+
+dashboardPokemonName: {
+  color: "#F8F2E8",
+  fontSize: 28,
+  fontWeight: "900",
+  marginTop: 2,
+},
+
+dashboardStatsGrid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  marginTop: 12,
+  gap: 8,
+},
+
+dashboardStatBox: {
+  width: "47%",
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.18)",
+  backgroundColor: "rgba(8, 6, 4, 0.55)",
+  borderRadius: 12,
+  paddingVertical: 8,
+  paddingHorizontal: 8,
+},
+
+dashboardStatNumber: {
+  color: "#F8E9CE",
+  fontSize: 20,
+  fontWeight: "900",
+},
+
+dashboardStatLabel: {
+  color: "#B39E82",
+  fontSize: 10,
+  marginTop: 2,
+  fontWeight: "700",
+},
+
+dashboardPokemonImageWrap: {
+  width: 104,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+dashboardPokemonImage: {
+  width: 92,
+  height: 128,
+  borderRadius: 12,
+  transform: [{ rotate: "-7deg" }],
+},
+
+dashboardPokemonFallback: {
+  width: 92,
+  height: 128,
+  borderRadius: 12,
+  backgroundColor: "#0E0A07",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+dashboardPokemonFallbackText: {
+  color: "#E4B56D",
+  fontSize: 28,
+  fontWeight: "900",
+},
+
+featuredSetCard: {
+  marginBottom: 18,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.30)",
+  backgroundColor: "rgba(18, 13, 9, 0.95)",
+  borderRadius: 22,
+  padding: 14,
+},
+
+featuredSetHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+},
+
+featuredSetInfo: {
+  flex: 1,
+  paddingRight: 12,
+},
+
+featuredSetLabel: {
+  color: "#E4B56D",
+  fontSize: 12,
+  fontWeight: "900",
+  textTransform: "uppercase",
+  letterSpacing: 1,
+},
+
+featuredSetName: {
+  color: "#F8F2E8",
+  fontSize: 24,
+  fontWeight: "900",
+  marginTop: 6,
+},
+
+featuredSetMeta: {
+  color: "#D4C0A0",
+  fontSize: 14,
+  fontWeight: "800",
+  marginTop: 8,
+},
+
+featuredSetDate: {
+  color: "#9F8E78",
+  fontSize: 11,
+  fontWeight: "700",
+  marginTop: 4,
+},
+
+featuredSetLogoBox: {
+  width: 110,
+  height: 72,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.18)",
+  backgroundColor: "rgba(8, 6, 4, 0.55)",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 8,
+},
+
+featuredSetLogo: {
+  width: "100%",
+  height: "100%",
+},
+
+featuredSetLogoFallback: {
+  color: "#E4B56D",
+  fontSize: 14,
+  fontWeight: "900",
+},
+
+featuredSetProgressRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 14,
+},
+
+featuredSetPercent: {
+  color: "#F8E9CE",
+  fontSize: 22,
+  fontWeight: "900",
+  width: 64,
+},
+
+featuredSetProgressTrack: {
+  flex: 1,
+  height: 8,
+  borderRadius: 999,
+  backgroundColor: "#24190D",
+  overflow: "hidden",
+},
+
+featuredSetProgressFill: {
+  height: "100%",
+  borderRadius: 999,
+  backgroundColor: "#E4B56D",
+},
+
+featuredSetButton: {
+  marginTop: 14,
+  height: 42,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: "#D6A45A",
+  backgroundColor: "rgba(214, 164, 90, 0.14)",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+featuredSetButtonText: {
+  color: "#F3DFC2",
+  fontSize: 13,
+  fontWeight: "900",
+},
+
+featuredSetButtonIcon: {
+  color: "#E4B56D",
+  fontSize: 24,
+  marginLeft: 8,
+  marginTop: -2,
+},
+
+collectionTrapezoidWrap: {
+  width: "100%",
+  height: 98,
+  borderRadius: 12,
+  overflow: "hidden",
+  flexDirection: "row",
+  backgroundColor: "#0E0A07",
+  marginBottom: 8,
+},
+
+collectionTrapezoidSlice: {
+  flex: 1,
+  overflow: "hidden",
+  backgroundColor: "#1B140E",
+},
+
+collectionTrapezoidLeft: {
+  transform: [{ skewX: "-8deg" }],
+  marginRight: -10,
+  zIndex: 1,
+},
+
+collectionTrapezoidCenter: {
+  zIndex: 3,
+  borderLeftWidth: 1,
+  borderRightWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.28)",
+},
+
+collectionTrapezoidRight: {
+  transform: [{ skewX: "8deg" }],
+  marginLeft: -10,
+  zIndex: 2,
+},
+
+collectionTrapezoidImage: {
+  width: "130%",
+  height: "100%",
+  marginLeft: -12,
+},
+
+collectionTrapezoidEmpty: {
+  flex: 1,
+  backgroundColor: "#1B140E",
+},
+
+collectionTrapezoidCustomCover: {
+  width: "100%",
+  height: 98,
+  borderRadius: 12,
+  marginBottom: 8,
+},
+
+cardSearchPreview: {
+  flexDirection: "row",
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: "rgba(214, 164, 90, 0.25)",
+  backgroundColor: "rgba(18, 13, 9, 0.92)",
+  borderRadius: 12,
+  padding: 10,
+  marginBottom: 10,
+},
+
+cardSearchPreviewImage: {
+  width: 72,
+  height: 100,
+  borderRadius: 8,
+  backgroundColor: "#0E0A07",
+},
+
+cardSearchPreviewInfo: {
+  flex: 1,
+  marginLeft: 10,
+},
+
+cardSearchPreviewTitle: {
+  color: "#F8E9CE",
+  fontSize: 14,
+  fontWeight: "900",
+},
+
+cardSearchPreviewText: {
+  color: "#B39E82",
+  fontSize: 12,
+  marginTop: 4,
+  fontWeight: "700",
+},
+
+cardFormFeedback: {
+  color: "#E4B56D",
+  fontSize: 12,
+  fontWeight: "700",
+  marginTop: 2,
+  marginBottom: 8,
+},
+
   authLoadingWrap: {
     flex: 1,
     backgroundColor: "#090909",
@@ -3166,6 +4630,111 @@ folderAddButton: {
   },
   rarityOptionText: { color: "#C2AE94", fontSize: 11, fontWeight: "700" },
   rarityOptionTextActive: { color: "#F0D9B7" },
+  favoritePokemonCard: {
+  marginTop: 14,
+  marginBottom: 18,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.28)",
+  backgroundColor: "rgba(18, 13, 9, 0.94)",
+  borderRadius: 20,
+  padding: 14,
+  flexDirection: "row",
+  justifyContent: "space-between",
+  overflow: "hidden",
+},
+
+favoritePokemonInfo: {
+  flex: 1,
+  paddingRight: 12,
+},
+
+favoritePokemonLabel: {
+  color: "#E4B56D",
+  fontSize: 12,
+  fontWeight: "900",
+  textTransform: "uppercase",
+  letterSpacing: 0.6,
+},
+
+favoritePokemonName: {
+  color: "#F8F2E8",
+  fontSize: 26,
+  fontWeight: "900",
+  marginTop: 5,
+},
+
+favoritePokemonSub: {
+  color: "#C9BA93",
+  fontSize: 13,
+  marginTop: 4,
+  fontWeight: "600",
+},
+
+favoritePokemonUpdate: {
+  color: "#8F7B61",
+  fontSize: 11,
+  marginTop: 8,
+  fontWeight: "700",
+},
+
+favoritePokemonRight: {
+  width: 132,
+  alignItems: "flex-end",
+  justifyContent: "space-between",
+},
+
+favoritePokemonPercentBadge: {
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.35)",
+  backgroundColor: "rgba(228, 181, 109, 0.14)",
+  borderRadius: 999,
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+},
+
+favoritePokemonPercentText: {
+  color: "#F3DFC2",
+  fontSize: 12,
+  fontWeight: "900",
+},
+
+favoritePokemonImagesWrap: {
+  width: 126,
+  height: 94,
+  marginTop: 8,
+  position: "relative",
+},
+
+favoritePokemonImage: {
+  position: "absolute",
+  width: 56,
+  height: 82,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: "rgba(228, 181, 109, 0.35)",
+  backgroundColor: "#0E0A07",
+},
+
+favoritePokemonImageLeft: {
+  left: 0,
+  top: 10,
+  transform: [{ rotate: "-8deg" }],
+  zIndex: 1,
+},
+
+favoritePokemonImageCenter: {
+  left: 34,
+  top: 0,
+  transform: [{ rotate: "0deg" }],
+  zIndex: 3,
+},
+
+favoritePokemonImageRight: {
+  left: 68,
+  top: 10,
+  transform: [{ rotate: "8deg" }],
+  zIndex: 2,
+},
   collectionModalCard: {
     width: "100%",
     maxHeight: "80%",
