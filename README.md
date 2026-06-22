@@ -1,4 +1,4 @@
-# <img src="hhttps://i.pinimg.com/736x/80/9f/be/809fbea32a94ca2ffdefe3060490121a.jpg" width="30"/> Estante do Treinador
+# <img src="https://i.pinimg.com/736x/80/9f/be/809fbea32a94ca2ffdefe3060490121a.jpg" width="30"/> Estante do Treinador
 
 Bem-vindo(a) ao **Estante do Treinador**! 🃏✨
 
