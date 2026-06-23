@@ -1,4 +1,4 @@
-# <img src="https://www.rw-designer.com/icon-image/23411-256x256x32.png" width="35"/> Estante do Treinador <img src="https://media.tenor.com/fz305WSZd2AAAAAM/no.gif" width="45"/>
+# <img src="https://www.rw-designer.com/icon-image/23411-256x256x32.png" width="35"/> Estante do Treinador 
 
 ---
 
@@ -71,12 +71,12 @@ Interface com tema escuro + dourado, trazendo sensação de coleção premium.
 <p align="center">
   <img src="./assets/printhome.jpeg" width="170"/>
   <img src="./assets/printexplorar.jpeg" width="170"/>
-  <img src="./assets/printset.jpeg" width="170"/>
+  <img src="./assets/printporset.jpeg" width="170"/>
 </p>
 
 <p align="center">
   <img src="./assets/printdetalhe.jpeg" width="170"/>
-  <img src="./assets/printwishlist.jpeg" width="170"/>
+  <img src="./assets/printtodas.jpeg" width="170"/>
 </p>
 
 ---
