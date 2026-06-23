@@ -1,13 +1,31 @@
-# <img src="https://i.pinimg.com/736x/80/9f/be/809fbea32a94ca2ffdefe3060490121a.jpg" width="30"/> Estante do Treinador
+# Estante do Treinador
 
-Bem-vindo(a) ao **Estante do Treinador**! 🃏✨
+## <img src="https://i.pinimg.com/736x/18/0d/0a/180d0a39c5effce6845663585562aa3b.jpg" width="30" style="border-radius:50%"/>  Olá treinador!
 
-Este é um aplicativo mobile criado para ajudar treinadores e colecionadores a organizarem suas cartas de forma simples, bonita e divertida. A ideia do projeto é transformar a experiência de colecionar cartas em algo mais visual, prático e personalizado.
+Bem-vindo(a) à **Estante do Treinador**! Sua estante portátil de cartinhas de Pokémon 🃏✨
 
-Com o app, o usuário pode cadastrar cartas na sua estante, explorar novas cartas, montar coleções, acompanhar o progresso dos sets e salvar cartas desejadas na wishlist.
+Este é um aplicativo mobile criado para ajudar treinadores e colecionadores a organizarem suas cartas de forma simples, bonita e divertida.
 
-> Projeto desenvolvido para fins acadêmicos e de portfólio.
-> Este projeto não é oficial e não possui vínculo com marcas ou empresas detentoras dos direitos das cartas.
+A ideia do projeto é transformar a experiência de colecionar cartas em algo mais visual, prático e personalizado, já que nem sempre conseguimos visualizar a nossa coleção física a qualquer momento.
+
+Com o app, o usuário pode:
+
+- cadastrar cartas na sua estante  
+- organizar sua coleção do jeito que preferir  
+- explorar novas cartas  
+- montar coleções personalizadas  
+- acompanhar o progresso dos sets  
+- salvar cartas na wishlist  
+
+---
+
+📌 Projeto desenvolvido para fins acadêmicos e de portfólio.  
+Este projeto não é oficial e não possui vínculo com marcas ou empresas detentoras dos direitos das cartas.
+
+<img 
+  src="https://i.pinimg.com/originals/15/e9/7e/15e97e1dcda2eb103efaf2ff259e5550.gif" 
+  width="300"
+/>
 
 ---
 
@@ -15,37 +33,51 @@ Com o app, o usuário pode cadastrar cartas na sua estante, explorar novas carta
 
 O **Estante do Treinador** nasceu com a proposta de ser uma estante digital para cartas colecionáveis.
 
-Em vez de anotar cartas em planilhas ou depender apenas da memória, o usuário consegue visualizar sua coleção de forma organizada, com imagens, raridades, sets, wishlist e informações detalhadas de cada carta.
+Em vez de anotar cartas em planilhas, deixar elas paradas em seu fichário ou depender apenas da memória, o usuário consegue visualizar sua coleção de forma organizada, com imagens, raridades, sets, wishlist e informações detalhadas de cada carta.
 
-O app possui uma interface em tema escuro com detalhes dourados, buscando passar uma sensação de coleção premium e aconchegante.
+O app possui uma interface em tema escuro com detalhes dourados, buscando transmitir uma sensação de coleção premium, moderna e aconchegante.
+
+![Logo](./assets/capaEstante.png)
 
 ---
 
 ## 💛 Funcionalidades
 
-* 📚 **Estante de cartas**
-  Cadastre cartas que você já possui na sua coleção.
+📚 **Estante de cartas**  
+Cadastre cartas que você já possui na sua coleção.
 
-* 🔎 **Explorar cartas**
-  Pesquise cartas por nome, código, coleção, tipo ou raridade.
+🔎 **Explorar cartas**  
+Pesquise cartas por nome, código, coleção, tipo ou raridade.
 
-* ⭐ **Wishlist**
-  Salve cartas que você ainda deseja conquistar.
+⭐ **Wishlist**  
+Salve cartas que você ainda deseja conquistar.
 
-* 🗂️ **Coleções personalizadas**
-  Crie coleções próprias e organize suas cartas do seu jeito.
+🗂️ **Coleções personalizadas**  
+Crie coleções próprias e organize suas cartas do seu jeito.
 
-* 🧩 **Progresso por set**
-  Veja quantas cartas você possui de cada set e acompanhe sua evolução.
+🧩 **Progresso por set**  
+Acompanhe quantas cartas você possui de cada set.
 
-* 🖼️ **Detalhes da carta**
-  Abra uma carta para visualizar informações completas, imagem, raridade, coleção e outros dados.
+🖼️ **Detalhes da carta**  
+Visualize informações completas da carta, incluindo imagem, raridade e artista.
 
-* 📅 **Data de captura**
-  Ao adicionar uma carta à estante, selecione a data em que ela foi conquistada.
+📅 **Data de captura**  
+Registre quando você conquistou cada carta.
 
-* 📸 **Pastas de fotos**
-  Organize fotos da sua coleção, binder ou cartas favoritas.
+<p align="center">
+
+<img src="./assets/printhome.png" width="180"/>
+<img src="./assets/printexplorar.png" width="180"/>
+<img src="./assets/printset.png" width="180"/>
+
+</p>
+
+<p align="center">
+
+<img src="./assets/printdetalhe.png" width="180"/>
+<img src="./assets/printwishlist.png" width="180"/>
+
+</p>
 
 ---
 
@@ -53,229 +85,158 @@ O app possui uma interface em tema escuro com detalhes dourados, buscando passar
 
 Este projeto foi desenvolvido com:
 
-* **React Native**
-* **Expo**
-* **Expo Router**
-* **TypeScript**
-* **AsyncStorage**
-* **JSON Server**
-* **API de catálogo de cartas**
-* **React Native DateTimePicker**
+- React Native  
+- Expo  
+- Expo Router  
+- TypeScript  
+- AsyncStorage  
+- JSON Server  
+- API de código aberto de cartas de pokémon TCG - TCGDex
 
 ---
 
 ## 🚀 Como rodar o projeto
 
-Antes de começar, você precisa ter instalado:
+### 📌 Pré-requisitos
 
-* Node.js
-* npm
-* Expo CLI
-* Um emulador Android/iOS ou o aplicativo Expo Go no celular
+- Node.js  
+- npm  
+- Expo CLI  
+- Emulador Android/iOS ou app Expo Go  
 
 ---
 
 ### 1. Clone o repositório
 
-```bash
 git clone <url-do-repositorio>
-```
 
-Depois entre na pasta do projeto:
+Entre na pasta do projeto:
 
-```bash
 cd meu-app
-```
 
 ---
 
 ### 2. Instale as dependências
 
-```bash
 npm install
-```
 
-Caso esteja usando Expo, também é recomendado instalar dependências compatíveis com a versão do projeto:
+Se estiver usando Expo:
 
-```bash
 npx expo install
-```
 
 ---
 
 ### 3. Inicie a API local
 
-O projeto utiliza um arquivo `db.json` para simular o backend com JSON Server.
+O projeto utiliza JSON Server como backend fake.
 
-Em um terminal separado, rode:
-
-```bash
 npx json-server --watch db.json --port 3000
-```
 
-A API local ficará disponível em:
+A API ficará disponível em:
 
-```bash
 http://localhost:3000
-```
 
-Se for testar pelo celular, talvez seja necessário trocar `localhost` pelo IP da sua máquina no arquivo de configuração da API.
+Se estiver no celular, troque localhost pelo IP da sua máquina.
 
 ---
 
-### 4. Inicie o aplicativo
+### 4. Inicie o app
 
-Em outro terminal, rode:
-
-```bash
 npx expo start -c
-```
 
-Depois, escolha uma das opções:
+Depois:
 
-* apertar `a` para abrir no Android;
-* apertar `i` para abrir no iOS;
-* escanear o QR Code com o Expo Go.
+- pressione **a** → Android  
+- pressione **i** → iOS  
+- escaneie o QR Code com Expo Go  
 
 ---
 
 ## 🧭 Como usar o app
 
-### Criando sua conta
-
-Ao abrir o app, faça login ou crie um usuário para acessar sua estante.
-
-Cada usuário possui sua própria coleção, wishlist, pastas e cartas cadastradas.
+### 🔐 Login
+Crie ou entre na sua conta para acessar sua estante personalizada.
 
 ---
 
-### Adicionando uma carta à estante
+### 📚 Adicionar cartas
 
-1. Acesse a aba **Estante**.
-2. Toque em **Adicionar carta**.
-3. Digite o código da carta, por exemplo:
-
-```bash
-002/131
-```
-
-4. Toque em **Buscar carta**.
-5. Confira a prévia da carta encontrada.
-6. Selecione a **data de captura** pelo calendário.
-7. Toque em **Salvar carta**.
-
-Pronto! A carta será adicionada à sua estante. ✨
+1. Vá até Estante  
+2. Clique em Adicionar carta  
+3. Digite o código (ex: 002/131)  
+4. Busque a carta  
+5. Selecione a data de captura  
+6. Salve  
 
 ---
 
-### Explorando cartas
+### 🔎 Explorar cartas
 
-1. Acesse a aba **Explorar**.
-2. Pesquise pelo nome, código ou coleção.
-3. Use filtros de raridade ou tipo.
-4. Toque em uma carta para ver os detalhes.
-5. Toque no coração para adicionar a carta à Wishlist.
-
----
-
-### Usando a Wishlist
-
-A Wishlist serve para guardar cartas que você ainda deseja conquistar.
-
-Na aba **Wishlist**, você pode:
-
-* visualizar as cartas desejadas;
-* abrir os detalhes da carta;
-* remover cartas da wishlist quando não quiser mais acompanhar.
+- Pesquise por nome, código ou coleção  
+- Use filtros de raridade e tipo  
+- Clique na carta para ver detalhes  
+- Adicione à wishlist clicando no coração  
 
 ---
 
-### Criando coleções personalizadas
+### ⭐ Wishlist
 
-1. Na Home, toque em **Nova coleção**.
-2. Escolha um nome para sua coleção.
-3. Abra a coleção criada.
-4. Adicione cartas da sua estante.
-5. Personalize a coleção como preferir.
+- Veja cartas desejadas  
+- Remova quando quiser  
+- Acompanhe o progresso da coleção  
 
 ---
 
-## 📁 Estrutura básica do projeto
+### 🗂️ Coleções
 
-```bash
-src/
- ├── app/
- │   ├── home.tsx
- │   ├── explore.tsx
- │   ├── wishlist.tsx
- │   └── card-detail.tsx
- │
- ├── services/
- │   ├── CatalogService.ts
- │   └── WishlistService.ts
- │
- ├── types/
- │   └── explore.ts
- │
- └── utils/
-     └── BuscaUtils.ts
-```
+- Crie coleções personalizadas  
+- Organize suas cartas  
+- Capa automática com 3 primeiras cartas  
+- Personalização opcional da capa  
 
 ---
 
-## 🎨 Identidade visual
-
-O app utiliza uma interface com tema escuro e detalhes em dourado, trazendo uma sensação de:
-
-* coleção premium;
-* aventura;
-* nostalgia;
-* organização;
-* conquista.
-
-A ideia é que cada carta cadastrada pareça uma pequena vitória dentro da jornada do treinador. 🏆
-
----
 
 ## 📌 Status do projeto
 
-🚧 Projeto em desenvolvimento.
+Em desenvolvimento
 
 Funcionalidades já implementadas:
+- Login  
+- Estante de cartas  
+- Explorar cartas  
+- Wishlist  
+- Coleções personalizadas  
+- Progresso por set  
+- Detalhes da carta  
+- Data de captura  
 
-* Login de usuário;
-* Estante de cartas;
-* Busca de cartas;
-* Wishlist;
-* Detalhes da carta;
-* Coleções personalizadas;
-* Progresso por set;
-* Calendário para data de captura;
-* Organização de fotos.
+---
 
-Melhorias futuras:
+## 🚀 Melhorias futuras
 
-* Scanner de cartas;
-* Melhorias no perfil do usuário;
-* Feed de fotos;
-* Estatísticas mais detalhadas;
-* Sincronização com banco online;
-* Melhorias de performance e cache.
+- Scanner de cartas  
+- Feed de fotos  
+- Estatísticas avançadas  
+- Sincronização online  
+- Performance e cache
+- Gamificação da coleção  
 
 ---
 
 ## 👩‍💻 Desenvolvido por
 
-Projeto desenvolvido por **Grazi** como parte dos estudos em desenvolvimento mobile, TypeScript, React Native e integração com APIs.
-
-Feito com dedicação, café e carinho por coleções. ☕✨
+Projeto criado por Graziella Pereira 💜  
+Estudo de React Native + APIs + TypeScript  
 
 ---
 
-## 💛 Considerações finais
+## 💛 Final
 
-O **Estante do Treinador** é mais do que um app de cadastro de cartas.
+A Estante do Treinador transforma sua coleção em uma experiência visual, organizada e divertida.
 
-Ele foi pensado para transformar a coleção do usuário em uma experiência visual, organizada e divertida, ajudando cada treinador a acompanhar sua jornada carta por carta.
+Cada carta é uma conquista!
 
-Se você também ama colecionar, explorar e completar sets, seja bem-vindo(a) à sua nova estante digital! 🃏✨
+<p align="center">
+  <img src="https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUybDZnZjlhbWdramR2cXR6amhtZjJpYWhia2p3aW51cTJmc2MybzR4OSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/XSALoTAZcAFAA/source.gif" width="300"/>
+</p>
