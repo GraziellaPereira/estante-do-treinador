@@ -331,6 +331,30 @@
         }
       ],
       "id": "lgQCoT92QGk"
+    },
+    {
+      "usuario": "graziteste",
+      "senha": "1234Graz",
+      "cards": [],
+      "collections": [],
+      "photoFolders": [
+        {
+          "id": "favoritas",
+          "nome": "Cartas favoritas",
+          "fotos": []
+        },
+        {
+          "id": "binder",
+          "nome": "Binder",
+          "fotos": []
+        },
+        {
+          "id": "outras",
+          "nome": "Outras",
+          "fotos": []
+        }
+      ],
+      "id": "UT0xMNpwg0I"
     }
   ],
   "cards": [
@@ -500,6 +524,27 @@
       "artista": "satoma",
       "serie": "Megaevolução",
       "userId": "O0P03ES0Anc"
+    },
+    {
+      "id": "_6JjWcLJZ3M",
+      "cardId": "me04-001",
+      "catalogCardId": "me04-001",
+      "nome": "Weedle",
+      "numero": "001/86",
+      "set": "Caos Ascendente",
+      "raridade": "Comum",
+      "raridadeRank": 10,
+      "imageUrl": "https://assets.tcgdex.net/pt/me/me04/001/high.png",
+      "capturadaEm": "2026-06-22T15:00:00.000Z",
+      "setId": "me04",
+      "setLogoUrl": "https://assets.tcgdex.net/pt/me/me04/logo.png",
+      "totalSetCards": 86,
+      "pokemon": "Weedle",
+      "tipo": "Planta",
+      "categoria": "Pokémon",
+      "artista": "sowsow",
+      "serie": "Megaevolução",
+      "userId": "O0P03ES0Anc"
     }
   ],
   "catalogCards": [
@@ -620,6 +665,20 @@
       "cardId": "me04-087",
       "createdAt": "2026-06-22T05:41:08.906Z",
       "updatedAt": "2026-06-22T05:41:08.906Z"
+    },
+    {
+      "id": "RyJ45p8EHoc",
+      "userId": "O0P03ES0Anc",
+      "cardId": "base4-87",
+      "createdAt": "2026-06-22T22:50:51.644Z",
+      "updatedAt": "2026-06-22T22:50:51.644Z"
+    },
+    {
+      "id": "KzzsnJcrr2Q",
+      "userId": "O0P03ES0Anc",
+      "cardId": "gym1-81",
+      "createdAt": "2026-06-22T22:51:05.198Z",
+      "updatedAt": "2026-06-22T22:51:05.198Z"
     }
   ],
   "collections": [
@@ -688,6 +747,12 @@
       "userId": "8WKY4Y8_lIo",
       "nome": "teste coleção",
       "createdAt": "2026-06-22T05:28:03.850Z"
+    },
+    {
+      "id": "nOYpxtbf1a8",
+      "userId": "O0P03ES0Anc",
+      "nome": "Teste",
+      "createdAt": "2026-06-22T22:48:47.621Z"
     }
   ],
   "collectionCards": [
@@ -780,6 +845,26 @@
       "id": "sB_vWGoQmvM",
       "collectionId": "0RNPPvk3XtQ",
       "cardId": "rc6s_TKWDIY"
+    },
+    {
+      "id": "LcGdLl3OAmI",
+      "collectionId": "collection-1782168527621",
+      "cardId": "rc6s_TKWDIY"
+    },
+    {
+      "id": "5u95kl0wKQM",
+      "collectionId": "collection-1782168527621",
+      "cardId": "H9w8M78cAjw"
+    },
+    {
+      "id": "SqRAyBw9epo",
+      "collectionId": "collection-1782168527621",
+      "cardId": "YCm-2YRgQR8"
+    },
+    {
+      "id": "eV_UzwxE84o",
+      "collectionId": "collection-1782168527621",
+      "cardId": "4jjpC_kIKG0"
     }
   ],
   "folders": [
@@ -1081,6 +1166,21 @@
     {
       "id": "YmoiY2PuHew",
       "userId": "8WKY4Y8_lIo",
+      "nome": "Outras"
+    },
+    {
+      "id": "alNbc6TDuqM",
+      "userId": "UT0xMNpwg0I",
+      "nome": "Binder"
+    },
+    {
+      "id": "-pjXm5b2vqY",
+      "userId": "UT0xMNpwg0I",
+      "nome": "Cartas favoritas"
+    },
+    {
+      "id": "JivUc9VUAq0",
+      "userId": "UT0xMNpwg0I",
       "nome": "Outras"
     }
   ],
